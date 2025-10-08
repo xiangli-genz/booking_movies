@@ -7,7 +7,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/tours', (req, res) => {
-  res.send('Danh sách tour')
+  res.send('Danh sách tour chứa 123')
 })
 
 app.listen(port, () => {
