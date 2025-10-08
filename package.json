@@ -1,14 +1,21 @@
 {
   "name": "project_1",
   "version": "1.0.0",
+  "description": "Simple tours-management app",
   "main": "index.js",
-  "license": "MIT",
   "scripts": {
-    "start": "nodemon --inspect index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0",
-    "nodemon": "^3.1.10",
-    "pug": "^3.0.3"
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "pug": "^3.0.2",
+    "mongodb": "^6.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }

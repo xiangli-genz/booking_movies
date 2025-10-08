@@ -1,20 +1,37 @@
 const express = require('express')
-const path = require('path')
+const path = require('path');
+const mongoose = require('mongoose');
+mongoose.connect('mongodb+srv://snow03t6:.Nh!Yh.LX4JgXQC@cluster0.bkjmjaj.mongodb.net/tours-management');
+
+const Tour = mongoose.model('Tour', {
+  name: String,
+  vehicle: String
+});
+
 const app = express()
 const port = 3000
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
+
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, res) => {
-  res.render("client/pages/home.pug", {
-    pageTitle: "Trang chủ"
-  })
-})
-app.get('/tours', (req, res) => {
-  res.render("client/pages/tour-list.pug", {
-    pageTitle: "Danh sách tour"
-  })
-})
+  res.render("client/pages/home", {
+    pageTitle: "Trang chủ",
+  });
+});
+
+app.get('/tours', async (req, res) => {
+  const tourList = await Tour.find({});
+
+  console.log(tourList);
+
+  res.render("client/pages/tour-list", {
+    pageTitle: "Danh sách tour",
+    tourList: tourList
+  });
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
