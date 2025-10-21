@@ -122,7 +122,7 @@ if(registerForm) {
       const email = event.target.email.value;
       const password = event.target.password.value;
 
-      const datafinal = {
+      const dataFinal = {
         fullName: fullName,
         email: email,
         password: password
