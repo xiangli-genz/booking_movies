@@ -10,6 +10,12 @@ const settingRoutes = require("./setting.route");
 const profileRoutes = require("./profile.route");
 
 const authMiddleware = require("../../middlewares/admin/auth.middleware");
+
+router.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store')
+  next();
+})
+
 router.use("/account", accountRoutes);
 router.use("/dashboard",authMiddleware.verifyToken, dashboardRoutes);
 router.use("/category",authMiddleware.verifyToken, categoryRoutes);
