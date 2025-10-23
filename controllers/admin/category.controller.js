@@ -1,4 +1,5 @@
 const moment = require("moment");
+const slugify = require('slugify');
 const Category = require("../../models/category.model")
 const AccountAdmin = require("../../models/account-admin.model")
 
@@ -37,6 +38,15 @@ module.exports.list = async (req, res) => {
   }
   // Hết Lọc theo ngày tạo
 
+  // Tìm kiếm
+  if(req.query.keyword) {
+    const keyword = slugify(req.query.keyword, {
+      lower: true
+    });
+    const keywordRegex = new RegExp(keyword);
+    find.slug = keywordRegex;
+  }
+  // Hết Tìm kiếm
 
   const categoryList = await Category
     .find(find)
@@ -190,6 +200,43 @@ module.exports.deletePatch = async (req, res) => {
     res.json({
       code: "error",
       message: "Id không hợp lệ!"
+    })
+  }
+}
+
+module.exports.changeMultiPatch = async (req, res) => {
+  try {
+    const { option, ids } = req.body;
+
+    switch (option) {
+      case "active":
+      case "inactive":
+        await Category.updateMany({
+          _id: { $in: ids }
+        }, {
+          status: option
+        });
+        req.flash("success", "Đổi trạng thái thành công!");
+        break;
+      case "delete":
+        await Category.updateMany({
+          _id: { $in: ids }
+        }, {
+          deleted: true,
+          deletedBy: req.account.id,
+          deletedAt: Date.now()
+        });
+        req.flash("success", "Xóa thành công!");
+        break;
+    }
+
+    res.json({
+      code: "success"
+    })
+  } catch (error) {
+    res.json({
+      code: "error",
+      message: "Id không tồn tại trong hệ thông!"
     })
   }
 }
