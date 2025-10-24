@@ -1011,12 +1011,35 @@ if (profileEditForm) {
       let avatar = null;
       if (avatars.length > 0) {
         avatar = avatars[0].file;
+        const elementImageDefault = event.target.avatar.closest("[image-default]");
+        const imageDefault = elementImageDefault.getAttribute("image-default");
+        if(imageDefault.includes(avatar.name)) {
+          avatar = null;
+        }
+
       }
 
-      console.log(fullName);
-      console.log(email);
-      console.log(phone);
-      console.log(avatar);
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("fullName", fullName);
+      formData.append("email", email);
+      formData.append("phone", phone);
+      formData.append("avatar", avatar);
+
+      fetch(`/${pathAdmin}/profile/edit`, {
+        method: "PATCH",
+        body: formData,
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            alert(data.message);
+          }
+
+          if(data.code == "success") {
+            window.location.reload();
+          }
+        })
     });
 }
 // End Profile Edit Form
@@ -1070,7 +1093,28 @@ if (profileChangePasswordForm) {
     ])
     .onSuccess((event) => {
       const password = event.target.password.value;
-      console.log(password);
+      const dataFinal = {
+        password: password
+      }
+
+      fetch(`/${pathAdmin}/profile/change-password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataFinal),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            alert(data.message);
+          }
+
+          if(data.code == "success") {
+            window.location.reload();
+          }
+        })
+
     });
 }
 // End Profile Change Password Form
