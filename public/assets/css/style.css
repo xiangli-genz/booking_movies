@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&display=swap');
 
 :root {
-  --color-primary: #4502C7;
+  --color-primary: #455A64;
 }
 
 * {
@@ -1488,7 +1488,7 @@ input, button, textarea {
 
 /* Box Contact */
 .box-contact {
-  background-color: #4502C7;
+  background-color: #455A64;
   border-radius: 10px;
   box-shadow: 0px 2px 4px 0px #00000026;
   position: fixed;
