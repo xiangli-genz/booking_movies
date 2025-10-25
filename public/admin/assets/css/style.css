@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
 
 :root {
-  --color-primary: #4880FF;
+  --color-primary: #455A64;
   --color-text: #202224;
 }
 
@@ -947,7 +947,7 @@ a {
   border-radius: 14px;
   overflow: hidden;
   width: 100%;
-  min-width: 1141px;
+  min-width: 1184px;
 }
 
 .table-2 table thead tr th {

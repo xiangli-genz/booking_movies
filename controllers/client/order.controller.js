@@ -2,7 +2,7 @@ const Tour = require("../../models/tour.model");
 const Order = require("../../models/order.model");
 const City = require("../../models/city.model");
 
-const variableHelper = require("../../config/variable");
+const variableConfig = require("../../config/variable");
 const gererateHelper = require("../../helpers/generate.helper");
 
 const moment = require("moment");
@@ -15,10 +15,10 @@ module.exports.createPost = async (req, res) => {
       const infoTour = await Tour.findOne({
         _id: item.tourId,
         status: "active",
-        deleted: false,
-      });
+        deleted: false
+      })
 
-      if (infoTour) {
+      if(infoTour) {
         // Thêm giá
         item.priceNewAdult = infoTour.priceNewAdult;
         item.priceNewChildren = infoTour.priceNewChildren;
@@ -34,40 +34,28 @@ module.exports.createPost = async (req, res) => {
         item.name = infoTour.name;
 
         // Cập nhật lại số lượng còn lại của tour
-        if (
-          infoTour.stockAdult < item.quantityAdult ||
-          infoTour.stockChildren < item.quantityChildren ||
-          infoTour.stockBaby < item.quantityBaby
-        ) {
+        if(infoTour.stockAdult < item.quantityAdult || infoTour.stockChildren < item.quantityChildren || infoTour.stockBaby < item.quantityBaby) {
           res.json({
             code: "error",
-            message: `Số lượng chỗ của tour ${item.name} đã hết, vui lòng chọn lại`,
-          });
+            message: `Số lượng chỗ của tour ${item.name} đã hết, vui lòng chọn lại`
+          })
           return;
         }
 
-        await Tour.updateOne(
-          {
-            _id: item.tourId,
-          },
-          {
-            stockAdult: infoTour.stockAdult - item.quantityAdult,
-            stockChildren: infoTour.stockChildren - item.quantityChildren,
-            stockBaby: infoTour.stockBaby - item.quantityBaby,
-          }
-        );
+        await Tour.updateOne({
+          _id: item.tourId
+        }, {
+          stockAdult: infoTour.stockAdult - item.quantityAdult,
+          stockChildren: infoTour.stockChildren - item.quantityChildren,
+          stockBaby: infoTour.stockBaby - item.quantityBaby,
+        })
       }
     }
 
     // Thanh toán
     // Tạm tính
     req.body.subTotal = req.body.items.reduce((sum, item) => {
-      return (
-        sum +
-        (item.priceNewAdult * item.quantityAdult +
-          item.priceNewChildren * item.quantityChildren +
-          item.priceNewBaby * item.quantityBaby)
-      );
+      return sum + ((item.priceNewAdult * item.quantityAdult) + (item.priceNewChildren * item.quantityChildren) + (item.priceNewBaby * item.quantityBaby));
     }, 0);
 
     // Giảm
@@ -88,17 +76,17 @@ module.exports.createPost = async (req, res) => {
     res.json({
       code: "success",
       message: "Đặt hàng thành công!",
-      orderId: newRecord.id,
-    });
+      orderId: newRecord.id
+    })
   } catch (error) {
     console.log(error);
 
     res.json({
       code: "error",
-      message: "Đặt hàng không thành công!",
-    });
+      message: "Đặt hàng không thành công!"
+    })
   }
-};
+}
 
 module.exports.success = async (req, res) => {
   try {
@@ -106,49 +94,39 @@ module.exports.success = async (req, res) => {
 
     const orderDetail = await Order.findOne({
       _id: orderId,
-      phone: phone,
-    });
+      phone: phone
+    })
 
-    if (!orderDetail) {
+    if(!orderDetail) {
       res.redirect("/");
       return;
     }
 
-    orderDetail.paymentMethodName = variableHelper.paymentMethod.find(
-      (item) => item.value == orderDetail.paymentMethod
-    ).label;
+    orderDetail.paymentMethodName = variableConfig.paymentMethod.find(item => item.value == orderDetail.paymentMethod).label;
 
-    orderDetail.paymentStatusName = variableHelper.paymentStatus.find(
-      (item) => item.value == orderDetail.paymentStatus
-    ).label;
+    orderDetail.paymentStatusName = variableConfig.paymentStatus.find(item => item.value == orderDetail.paymentStatus).label;
 
-    orderDetail.statusName = variableHelper.orderStatus.find(
-      (item) => item.value == orderDetail.status
-    ).label;
+    orderDetail.statusName = variableConfig.orderStatus.find(item => item.value == orderDetail.status).label;
 
-    orderDetail.createdAtFormat = moment(orderDetail.createdAt).format(
-      "HH:mm - DD/MM/YYYY"
-    );
+    orderDetail.createdAtFormat = moment(orderDetail.createdAt).format("HH:mm - DD/MM/YYYY");
 
     for (const item of orderDetail.items) {
       const infoTour = await Tour.findOne({
         _id: item.tourId,
-        deleted: false,
-      });
+        deleted: false
+      })
 
-      if (infoTour) {
+      if(infoTour) {
         item.slug = infoTour.slug;
       }
 
-      item.departureDateFormat = moment(item.departureDate).format(
-        "DD/MM/YYYY"
-      );
+      item.departureDateFormat = moment(item.departureDate).format("DD/MM/YYYY");
 
       const city = await City.findOne({
-        _id: item.locationFrom,
-      });
+        _id: item.locationFrom
+      })
 
-      if (city) {
+      if(city) {
         item.locationFromName = city.name;
       }
     }
@@ -157,9 +135,11 @@ module.exports.success = async (req, res) => {
 
     res.render("client/pages/order-success", {
       pageTitle: "Đặt hàng thành công",
-      orderDetail: orderDetail,
+      orderDetail: orderDetail
+
     });
-  } catch (error) {
-    res.redirect("/");
-  }
-};
+} catch (error) {
+res.redirect("/");
+}
+
+}
