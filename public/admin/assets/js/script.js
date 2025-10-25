@@ -108,82 +108,147 @@ if (listFilepondImage.length > 0) {
 // End Filepond Image
 
 // Filepond Image Multi
-const listFilepondImageMulti = document.querySelectorAll("[filepond-image-multi]");
+const listFilepondImageMulti = document.querySelectorAll(
+  "[filepond-image-multi]"
+);
 let filePondMulti = {};
-if(listFilepondImageMulti.length > 0) {
-  listFilepondImageMulti.forEach(filepondImage => {
+if (listFilepondImageMulti.length > 0) {
+  listFilepondImageMulti.forEach((filepondImage) => {
     FilePond.registerPlugin(FilePondPluginImagePreview);
     FilePond.registerPlugin(FilePondPluginFileValidateType);
 
     let files = null;
-    const elementListImageDefault = filepondImage.closest("[list-image-default]");
-    if(elementListImageDefault) {
-      let listImageDefault = elementListImageDefault.getAttribute("list-image-default");
-      if(listImageDefault) {
+    const elementListImageDefault = filepondImage.closest(
+      "[list-image-default]"
+    );
+    if (elementListImageDefault) {
+      let listImageDefault =
+        elementListImageDefault.getAttribute("list-image-default");
+      if (listImageDefault) {
         listImageDefault = JSON.parse(listImageDefault);
         files = [];
-        listImageDefault.forEach(image => {
+        listImageDefault.forEach((image) => {
           files.push({
             source: image, // Đường dẫn ảnh
           });
-        })
+        });
       }
     }
 
     filePondMulti[filepondImage.name] = FilePond.create(filepondImage, {
-      labelIdle: '+',
+      labelIdle: "+",
       files: files,
     });
   });
 }
 // End Filepond Image Multi
 
-
 // Biểu đồ doanh thu
 const revenueChart = document.querySelector("#revenue-chart");
-if (revenueChart) {
-  new Chart(revenueChart, {
-    type: "line",
-    data: {
-      labels: ["01", "02", "03", "04", "05"],
-      datasets: [
-        {
-          label: "Tháng 04/2025", // Nhãn của dataset
-          data: [1200000, 1800000, 3200000, 900000, 1600000], // Dữ liệu
-          borderColor: "#4379EE", // Màu viền
-          borderWidth: 1.5, // Độ dày của đường
+if(revenueChart) {
+  let chart = null;
+  const drawChart = (date) => {
+    // Lấy tháng và năm hiện tại
+      const currentMonth = date.getMonth() + 1; // getMonth() trả về giá trị từ 0 đến 11, nên cần +1
+      const currentYear = date.getFullYear();
+
+      // Tạo một đối tượng Date mới cho tháng trước
+      // Nếu hiện tại là tháng 1 thì new Date(currentYear, 0 - 1, 1) sẽ tự động chuyển thành tháng 12 của năm trước.
+      const previousMonthDate = new Date(currentYear, date.getMonth() - 1, 1);
+
+      // Lấy tháng và năm từ đối tượng previousMonthDate
+      const previousMonth = previousMonthDate.getMonth() + 1;
+      const previousYear = previousMonthDate.getFullYear();
+
+      // Lấy ra tổng số ngày
+      const daysInMonthCurrent = new Date(currentYear, currentMonth, 0).getDate();
+      const daysInMonthPrevious = new Date(previousYear, previousMonth, 0).getDate();
+      const days = daysInMonthCurrent > daysInMonthPrevious ? daysInMonthCurrent : daysInMonthPrevious;
+      const arrayDay = [];
+      for(let i = 1; i <= days; i++) {
+        arrayDay.push(i);
+      }
+
+      const dataFinal = {
+        currentMonth: currentMonth,
+        currentYear: currentYear,
+        previousMonth: previousMonth,
+        previousYear: previousYear,
+        arrayDay: arrayDay
+      };
+
+      fetch(`/${pathAdmin}/dashboard/revenue-chart`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          label: "Tháng 03/2025", // Nhãn của dataset
-          data: [1000000, 900000, 1200000, 1200000, 1400000], // Dữ liệu
-          borderColor: "#EF3826", // Màu viền
-          borderWidth: 1.5, // Độ dày của đường
-        },
-      ],
-    },
-    options: {
-      plugins: {
-        legend: {
-          position: "bottom",
-        },
-      },
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: "Ngày",
-          },
-        },
-        y: {
-          title: {
-            display: true,
-            text: "Doanh thu (VND)",
-          },
-        },
-      },
-      maintainAspectRatio: false, // Không giữ tỷ lệ khung hình mặc định
-    },
-  });
+        body: JSON.stringify(dataFinal),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            alert(data.message);
+          }
+
+          if(data.code == "success") {
+            if(chart) {
+              chart.destroy();
+            }
+            chart = new Chart(revenueChart, {
+              type: 'line',
+              data: {
+                labels: arrayDay,
+                datasets: [
+                  {
+                    label: `Tháng ${currentMonth}/${currentYear}`, // Nhãn của dataset
+                    data: data.dataMonthCurrent, // Dữ liệu
+                    borderColor: '#4379EE', // Màu viền
+                    borderWidth: 1.5, // Độ dày của đường
+                  },
+                  {
+                    label: `Tháng ${previousMonth}/${previousYear}`, // Nhãn của dataset
+                    data: data.dataMonthPrevious, // Dữ liệu
+                    borderColor: '#EF3826', // Màu viền
+                    borderWidth: 1.5, // Độ dày của đường
+                  }
+                ]
+              },
+              options: {
+                plugins: {
+                  legend: {
+                    position: 'bottom'
+                  }
+                },
+                scales: {
+                  x: {
+                    title: {
+                      display: true,
+                      text: 'Ngày'
+                    }
+                  },
+                  y: {
+                    title: {
+                      display: true,
+                      text: 'Doanh thu (VND)'
+                    }
+                  }
+                },
+                maintainAspectRatio: false, // Không giữ tỷ lệ khung hình mặc định
+              }
+            });
+          }
+        })
+  }
+
+  // Lấy ngày hiện tại
+  const now = new Date();
+  drawChart(now);
+
+  const inputMonth = document.querySelector(".section-2 input[type='month']");
+  inputMonth.addEventListener("change", () => {
+    const value = inputMonth.value;
+    drawChart(new Date(value));
+  })
 }
 // Hết Biểu đồ doanh thu
 
@@ -385,13 +450,12 @@ if (tourCreateForm) {
       formData.append("schedules", JSON.stringify(schedules));
 
       // images
-      if(filePondMulti.images.getFiles().length > 0) {
-        filePondMulti.images.getFiles().forEach(item => {
+      if (filePondMulti.images.getFiles().length > 0) {
+        filePondMulti.images.getFiles().forEach((item) => {
           formData.append("images", item.file);
-        })
+        });
       }
       // End images
-
 
       fetch(`/${pathAdmin}/tour/create`, {
         method: "POST",
@@ -508,13 +572,12 @@ if (tourEditForm) {
       formData.append("schedules", JSON.stringify(schedules));
 
       // images
-      if(filePondMulti.images.getFiles().length > 0) {
-        filePondMulti.images.getFiles().forEach(item => {
+      if (filePondMulti.images.getFiles().length > 0) {
+        filePondMulti.images.getFiles().forEach((item) => {
           formData.append("images", item.file);
-        })
+        });
       }
       // End images
-
 
       fetch(`/${pathAdmin}/tour/edit/${id}`, {
         method: "PATCH",
@@ -582,7 +645,7 @@ if (orderEditForm) {
         note: note,
         paymentMethod: paymentMethod,
         paymentStatus: paymentStatus,
-        status: status
+        status: status,
       };
 
       fetch(`/${pathAdmin}/order/edit/${id}`, {
@@ -592,17 +655,16 @@ if (orderEditForm) {
         },
         body: JSON.stringify(dataFinal),
       })
-        .then(res => res.json())
-        .then(data => {
-          if(data.code == "error") {
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
             alert(data.message);
           }
 
-          if(data.code == "success") {
+          if (data.code == "success") {
             window.location.reload();
           }
-        })
-
+        });
     });
 }
 // End Order Edit Form
@@ -788,85 +850,86 @@ if (settingAccountAdminCreateForm) {
         method: "POST",
         body: formData,
       })
-        .then(res => res.json())
-        .then(data => {
-          if(data.code == "error") {
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
             alert(data.message);
           }
 
-          if(data.code == "success") {
+          if (data.code == "success") {
             window.location.href = `/${pathAdmin}/setting/account-admin/list`;
           }
-        })
-
+        });
     });
 }
 // End Setting Account Admin Create Form
 // Setting Account Admin Edit Form
-const settingAccountAdminEditForm = document.querySelector("#setting-account-admin-edit-form");
-if(settingAccountAdminEditForm) {
-  const validation = new JustValidate('#setting-account-admin-edit-form');
+const settingAccountAdminEditForm = document.querySelector(
+  "#setting-account-admin-edit-form"
+);
+if (settingAccountAdminEditForm) {
+  const validation = new JustValidate("#setting-account-admin-edit-form");
 
   validation
-    .addField('#fullName', [
+    .addField("#fullName", [
       {
-        rule: 'required',
-        errorMessage: 'Vui lòng nhập họ tên!'
+        rule: "required",
+        errorMessage: "Vui lòng nhập họ tên!",
       },
       {
-        rule: 'minLength',
+        rule: "minLength",
         value: 5,
-        errorMessage: 'Họ tên phải có ít nhất 5 ký tự!',
+        errorMessage: "Họ tên phải có ít nhất 5 ký tự!",
       },
       {
-        rule: 'maxLength',
+        rule: "maxLength",
         value: 50,
-        errorMessage: 'Họ tên không được vượt quá 50 ký tự!',
+        errorMessage: "Họ tên không được vượt quá 50 ký tự!",
       },
     ])
-    .addField('#email', [
+    .addField("#email", [
       {
-        rule: 'required',
-        errorMessage: 'Vui lòng nhập email!'
+        rule: "required",
+        errorMessage: "Vui lòng nhập email!",
       },
       {
-        rule: 'email',
-        errorMessage: 'Email không đúng định dạng!',
+        rule: "email",
+        errorMessage: "Email không đúng định dạng!",
       },
     ])
-    .addField('#phone', [
+    .addField("#phone", [
       {
-        rule: 'customRegexp',
+        rule: "customRegexp",
         value: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g,
-        errorMessage: 'Số điện thoại không đúng định dạng!'
+        errorMessage: "Số điện thoại không đúng định dạng!",
       },
     ])
-    .addField('#positionCompany', [
+    .addField("#positionCompany", [
       {
-        rule: 'required',
-        errorMessage: 'Vui lòng nhập chức vụ!'
+        rule: "required",
+        errorMessage: "Vui lòng nhập chức vụ!",
       },
     ])
-    .addField('#password', [
+    .addField("#password", [
       {
-        validator: (value) => value ? value.length >= 8 : true,
-        errorMessage: 'Mật khẩu phải chứa ít nhất 8 ký tự!',
+        validator: (value) => (value ? value.length >= 8 : true),
+        errorMessage: "Mật khẩu phải chứa ít nhất 8 ký tự!",
       },
       {
-        validator: (value) => value ? /[A-Z]/.test(value) : true,
-        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ cái in hoa!',
+        validator: (value) => (value ? /[A-Z]/.test(value) : true),
+        errorMessage: "Mật khẩu phải chứa ít nhất một chữ cái in hoa!",
       },
       {
-        validator: (value) => value ? /[a-z]/.test(value) : true,
-        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ cái thường!',
+        validator: (value) => (value ? /[a-z]/.test(value) : true),
+        errorMessage: "Mật khẩu phải chứa ít nhất một chữ cái thường!",
       },
       {
-        validator: (value) => value ? /\d/.test(value) : true,
-        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ số!',
+        validator: (value) => (value ? /\d/.test(value) : true),
+        errorMessage: "Mật khẩu phải chứa ít nhất một chữ số!",
       },
       {
-        validator: (value) => value ? /[@$!%*?&]/.test(value) : true,
-        errorMessage: 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt!',
+        validator: (value) => (value ? /[@$!%*?&]/.test(value) : true),
+        errorMessage: "Mật khẩu phải chứa ít nhất một ký tự đặc biệt!",
       },
     ])
     .onSuccess((event) => {
@@ -880,11 +943,12 @@ if(settingAccountAdminEditForm) {
       const password = event.target.password.value;
       const avatars = filePond.avatar.getFiles();
       let avatar = null;
-      if(avatars.length > 0) {
+      if (avatars.length > 0) {
         avatar = avatars[0].file;
-        const elementImageDefault = event.target.avatar.closest("[image-default]");
+        const elementImageDefault =
+          event.target.avatar.closest("[image-default]");
         const imageDefault = elementImageDefault.getAttribute("image-default");
-        if(imageDefault.includes(avatar.name)) {
+        if (imageDefault.includes(avatar.name)) {
           avatar = null;
         }
       }
@@ -897,7 +961,7 @@ if(settingAccountAdminEditForm) {
       formData.append("role", role);
       formData.append("positionCompany", positionCompany);
       formData.append("status", status);
-      if(password) {
+      if (password) {
         formData.append("password", password);
       }
       formData.append("avatar", avatar);
@@ -906,22 +970,19 @@ if(settingAccountAdminEditForm) {
         method: "PATCH",
         body: formData,
       })
-        .then(res => res.json())
-        .then(data => {
-          if(data.code == "error") {
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
             alert(data.message);
           }
 
-          if(data.code == "success") {
+          if (data.code == "success") {
             window.location.reload();
           }
-        })
-    })
-  ;
+        });
+    });
 }
 // End Setting Account Admin Edit Form
-
-
 
 // Setting Role Create Form
 const settingRoleCreateForm = document.querySelector(
@@ -954,7 +1015,7 @@ if (settingRoleCreateForm) {
       const dataFinal = {
         name: name,
         description: description,
-        permissions: permissions
+        permissions: permissions,
       };
 
       fetch(`/${pathAdmin}/setting/role/create`, {
@@ -964,30 +1025,30 @@ if (settingRoleCreateForm) {
         },
         body: JSON.stringify(dataFinal),
       })
-        .then(res => res.json())
-        .then(data => {
-          if(data.code == "error") {
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
             alert(data.message);
           }
 
-          if(data.code == "success") {
+          if (data.code == "success") {
             window.location.href = `/${pathAdmin}/setting/role/list`;
           }
-        })
+        });
     });
 }
 // End Setting Role Create Form
 
 // Setting Role Edit Form
 const settingRoleEditForm = document.querySelector("#setting-role-edit-form");
-if(settingRoleEditForm) {
-  const validation = new JustValidate('#setting-role-edit-form');
+if (settingRoleEditForm) {
+  const validation = new JustValidate("#setting-role-edit-form");
 
   validation
-    .addField('#name', [
+    .addField("#name", [
       {
-        rule: 'required',
-        errorMessage: 'Vui lòng nhập tên nhóm quyền!'
+        rule: "required",
+        errorMessage: "Vui lòng nhập tên nhóm quyền!",
       },
     ])
     .onSuccess((event) => {
@@ -997,8 +1058,10 @@ if(settingRoleEditForm) {
       const permissions = [];
 
       // permissions
-      const listElementPermission = settingRoleEditForm.querySelectorAll('input[name="permissions"]:checked');
-      listElementPermission.forEach(input => {
+      const listElementPermission = settingRoleEditForm.querySelectorAll(
+        'input[name="permissions"]:checked'
+      );
+      listElementPermission.forEach((input) => {
         permissions.push(input.value);
       });
       // End permissions
@@ -1006,7 +1069,7 @@ if(settingRoleEditForm) {
       const dataFinal = {
         name: name,
         description: description,
-        permissions: permissions
+        permissions: permissions,
       };
 
       fetch(`/${pathAdmin}/setting/role/edit/${id}`, {
@@ -1016,21 +1079,19 @@ if(settingRoleEditForm) {
         },
         body: JSON.stringify(dataFinal),
       })
-        .then(res => res.json())
-        .then(data => {
-          if(data.code == "error") {
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
             alert(data.message);
           }
 
-          if(data.code == "success") {
+          if (data.code == "success") {
             window.location.reload();
           }
-        })
-    })
-  ;
+        });
+    });
 }
 // End Setting Role Edit Form
-
 
 // Profile Edit Form
 const profileEditForm = document.querySelector("#profile-edit-form");
@@ -1083,12 +1144,12 @@ if (profileEditForm) {
       let avatar = null;
       if (avatars.length > 0) {
         avatar = avatars[0].file;
-        const elementImageDefault = event.target.avatar.closest("[image-default]");
+        const elementImageDefault =
+          event.target.avatar.closest("[image-default]");
         const imageDefault = elementImageDefault.getAttribute("image-default");
-        if(imageDefault.includes(avatar.name)) {
+        if (imageDefault.includes(avatar.name)) {
           avatar = null;
         }
-
       }
 
       // Tạo FormData
@@ -1102,16 +1163,16 @@ if (profileEditForm) {
         method: "PATCH",
         body: formData,
       })
-        .then(res => res.json())
-        .then(data => {
-          if(data.code == "error") {
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
             alert(data.message);
           }
 
-          if(data.code == "success") {
+          if (data.code == "success") {
             window.location.reload();
           }
-        })
+        });
     });
 }
 // End Profile Edit Form
@@ -1166,8 +1227,8 @@ if (profileChangePasswordForm) {
     .onSuccess((event) => {
       const password = event.target.password.value;
       const dataFinal = {
-        password: password
-      }
+        password: password,
+      };
 
       fetch(`/${pathAdmin}/profile/change-password`, {
         method: "PATCH",
@@ -1176,17 +1237,16 @@ if (profileChangePasswordForm) {
         },
         body: JSON.stringify(dataFinal),
       })
-        .then(res => res.json())
-        .then(data => {
-          if(data.code == "error") {
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
             alert(data.message);
           }
 
-          if(data.code == "success") {
+          if (data.code == "success") {
             window.location.reload();
           }
-        })
-
+        });
     });
 }
 // End Profile Change Password Form
