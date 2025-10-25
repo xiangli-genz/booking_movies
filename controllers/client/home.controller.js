@@ -41,11 +41,30 @@ module.exports.home = async (req, res) => {
   }
   // End Section 4: Tour Trong Nước
 
+  // Section 5: Tour Nước Ngoài
+  const categoryIdSection5 = "68fa17faa45ecc987bb25a49"; // id danh mục Tour Nước Ngoài
+  const listCategoryIdSection5 = await categoryHelper.getAllSubcategoryIds(categoryIdSection5);
+
+  const tourListSection5 = await Tour
+    .find({
+      category: { $in: listCategoryIdSection5 },
+      deleted: false,
+      status: "active"
+    })
+    .sort({
+      position: "desc"
+    })
+    .limit(8)
+
+  for(const item of tourListSection5) {
+    item.departureDateFormat = moment(item.departureDate).format("DD/MM/YYYY");
+  }
+  // End Section 5: Tour Nước Ngoài
 
   res.render("client/pages/home", {
     pageTitle: "Trang chủ",
     tourListSection2: tourListSection2,
-    tourListSection4: tourListSection4
-
+    tourListSection4: tourListSection4,
+    tourListSection5: tourListSection5
   })
 }
