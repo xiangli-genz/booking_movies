@@ -203,7 +203,7 @@ block main
           +product-item(item)
           // End Product Item
       .inner-button
-        a.button-outline(href="#") Xem tất cả
+        a.button-outline(href="/category/tour-trong-nuoc") Xem tất cả
   // End Section 4
   // Section 5
   .section-5(
@@ -219,65 +219,6 @@ block main
             )
   // End Section 5
   // Section 6
-  -
-    var productListSection6 = [
-      {
-        avatar: '/assets/images/product-1.jpg',
-        slug: "#",
-        discount: 30,
-        name: "Hà Nội - Lào Cai - SaPa 4N3Đ",
-        priceOld: "13.650.000",
-        priceNew: "2.590.000",
-        code: "TOUR000001",
-        departureDate: "22/07/2024",
-        time: "10 Ngày 9 Đêm",
-        ratingStars: 4,
-        ratingTotal: 20,
-        stock: 10
-      },
-      {
-        avatar: '/assets/images/product-2.jpg',
-        slug: "#",
-        discount: 30,
-        name: "Hà Nội - Lào Cai - SaPa 4N3Đ",
-        priceOld: "13.650.000",
-        priceNew: "2.590.000",
-        code: "TOUR000001",
-        departureDate: "22/07/2024",
-        time: "10 Ngày 9 Đêm",
-        ratingStars: 5,
-        ratingTotal: 20,
-        stock: 10
-      },
-      {
-        avatar: '/assets/images/product-3.jpg',
-        slug: "#",
-        discount: 30,
-        name: "Hà Nội - Lào Cai - SaPa 4N3Đ",
-        priceOld: "13.650.000",
-        priceNew: "2.590.000",
-        code: "TOUR000001",
-        departureDate: "22/07/2024",
-        time: "10 Ngày 9 Đêm",
-        ratingStars: 3,
-        ratingTotal: 20,
-        stock: 10
-      },
-      {
-        avatar: '/assets/images/product-3.jpg',
-        slug: "#",
-        discount: 30,
-        name: "Hà Nội - Lào Cai - SaPa 4N3Đ",
-        priceOld: "13.650.000",
-        priceNew: "2.590.000",
-        code: "TOUR000001",
-        departureDate: "22/07/2024",
-        time: "10 Ngày 9 Đêm",
-        ratingStars: 3,
-        ratingTotal: 20,
-        stock: 10
-      }
-    ];
   .section-4
     .container
       h2.box-title(
@@ -290,11 +231,11 @@ block main
         data-aos="fade-up"
         )
         each item in productListSection6
-            // Product Item
-            //- +product-item(item)
-            // End Product Item
+          // Product Item
+          +product-item(item)
+          // End Product Item
       .inner-button
-        a.button-outline(href="#") Xem tất cả
+        a.button-outline(href="/category/tour-nuoc-ngoai") Xem tất cả
   // End Section 6
   // Section 7
   .section-5(
