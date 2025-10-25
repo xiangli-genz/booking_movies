@@ -3,8 +3,8 @@ const Contact = require("../../models/contact.model");
 
 module.exports.list = async (req, res) => {
     const find = {
-    deleted: false
-  };
+      deleted: false
+    };
 
   const contactList = await Contact
     .find(find)
@@ -15,10 +15,8 @@ module.exports.list = async (req, res) => {
   for (const item of contactList) {
     item.createdAtFormat = moment(item.createdAt).format("HH:mm - DD/MM/YYYY");
   }
-
     res.render("admin/pages/contact-list", {
         pageTitle: "Thông tin liên hệ",
         contactList: contactList
-
     });
 }
