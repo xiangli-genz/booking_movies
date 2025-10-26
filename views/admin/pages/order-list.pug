@@ -8,27 +8,11 @@ block main
     .inner-wrap
       .inner-item.inner-label
         <i class="fa-solid fa-filter"></i> Bộ lọc
-      .inner-item
-        select
-          option(value="") Trạng thái
-          option(value="") Khởi tạo
-          option(value="") Hoàn thành
-          option(value="") Hủy
       .inner-item.inner-date
-        input(type="date")
+        input(type="date" filter-start-date)
         span -
-        input(type="date")
-      .inner-item
-        select
-          option(value="") Phương thức thanh toán
-          option(value="") VNPay
-          option(value="") ZaloPay
-      .inner-item
-        select
-          option(value="") Trạng thái thanh toán
-          option(value="") Đã thanh toán
-          option(value="") Chưa thanh toán
-      .inner-item.inner-reset
+        input(type="date" filter-end-date)
+      .inner-item.inner-reset(filter-reset)
         <i class="fa-solid fa-rotate-left"></i> Xóa bộ lọc
   //- End Section 4
 
@@ -37,7 +21,7 @@ block main
     .inner-wrap
       .inner-search
         <i class="fa-solid fa-magnifying-glass"></i>
-        input(type="text" placeholder="Tìm kiếm")
+        input(type="text" placeholder="Tìm kiếm" search)
   //- End Section 5
 
   //- Section 6
@@ -86,6 +70,7 @@ block main
                   .badge.badge-green #{orderDetail.statusName}
                 else if (orderDetail.status == "cancel")
                   .badge.badge-red #{orderDetail.statusName}
+              
               td(class="inner-center")
                 div #{orderDetail.createdAtTime}
                 div #{orderDetail.createdAtDate}
@@ -95,14 +80,9 @@ block main
                     href=`/${pathAdmin}/order/edit/${orderDetail.id}`
                     class="inner-edit"
                   ) <i class="fa-regular fa-pen-to-square"></i>
-                  button(class="inner-delete") <i class="fa-regular fa-trash-can"></i>
+                  button(
+                    button-delete 
+                    class="inner-delete"
+                    data-api=`/${pathAdmin}/order/delete/${orderDetail.id}`
+                    ) <i class="fa-regular fa-trash-can"></i>
   //- End Section 6
-
-  //- Section 7
-  .section-7
-    span(class="inner-label") Hiển thị 1 - 9 của 78
-    select(class="inner-pagination")
-      option Trang 1
-      option Trang 2
-      option Trang 3
-  //- End Section 7

@@ -5,11 +5,44 @@ const Tour = require("../../models/tour.model");
 const AccountAdmin = require("../../models/account-admin.model");
 
 const categoryHelper = require("../../helpers/category.helper");
+const { default: slugify } = require("slugify");
 
 module.exports.list = async (req, res) => {
     const find = {
     deleted: false
   };
+
+  if(req.query.status) {
+    find.status = req.query.status;
+  }
+
+  if(req.query.createdBy) {
+    find.createdBy = req.query.createdBy;
+  }
+
+  const dateFiler = {};
+
+  if(req.query.startDate) {
+    const startDate = moment(req.query.startDate).startOf("date").toDate();
+    dateFiler.$gte = startDate;
+  }
+
+  if(req.query.endDate) {
+    const endDate = moment(req.query.endDate).endOf("date").toDate();
+    dateFiler.$lte = endDate;
+  }
+
+  if(Object.keys(dateFiler).length > 0) {
+    find.createdAt = dateFiler;
+  }
+
+  if(req.query.keyword) {
+    const keyword = slugify(req.query.keyword, {
+      lower: true
+    });
+  const keywordRegex = new RegExp(keyword);
+  find.slug = keywordRegex;;
+  }
 
   const tourList = await Tour
     .find(find)
@@ -35,9 +68,15 @@ module.exports.list = async (req, res) => {
     item.createdAtFormat = moment(item.createdAt).format("HH:mm - DD/MM/YYYY");
     item.updatedAtFormat = moment(item.updatedAt).format("HH:mm - DD/MM/YYYY");
   }
+  const accountAdminList = await AccountAdmin
+  .find({})
+  .select("id fullName");
+  
     res.render("admin/pages/tour-list", {
         pageTitle: "Quản lý tour",
-        tourList: tourList
+        tourList: tourList,
+        accountAdminList: accountAdminList
+
     });
 }
 

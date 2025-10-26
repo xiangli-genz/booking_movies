@@ -56,7 +56,6 @@ block main
               th Thông tin khách
               th Danh sách tour
               th Thanh toán
-              th Trạng thái
               th.inner-text-right Ngày đặt
           tbody
             each order in orders
@@ -88,8 +87,6 @@ block main
                   .inner-text Thanh toán: #{(order.total - (order.discount || 0)).toLocaleString('vi-VN')}đ
                   .inner-text PTTT: #{order.paymentMethod}
                   .inner-text TTTT: #{order.paymentStatus}
-                td
-                  .badge.badge-orange #{order.status}
                 td.inner-text-right
                   .inner-text #{order.createdAt ? order.createdAt.toLocaleTimeString('vi-VN') : ''}
                   .inner-text #{order.createdAt ? order.createdAt.toLocaleDateString('vi-VN') : ''}
