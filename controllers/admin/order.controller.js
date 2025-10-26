@@ -4,9 +4,38 @@ const variableConfig = require("../../config/variable");
 const moment = require("moment");
 
 module.exports.list = async (req, res) => {
-    const find = {
+  const find = {
     deleted: false
   };
+
+  const dateFiler = {};
+
+  if(req.query.startDate) {
+    const startDate = moment(req.query.startDate).startOf("date").toDate();
+    dateFiler.$gte = startDate;
+  }
+
+  if(req.query.endDate) {
+    const endDate = moment(req.query.endDate).endOf("date").toDate();
+    dateFiler.$lte = endDate;
+  }
+
+  if(Object.keys(dateFiler).length > 0) {
+    find.createdAt = dateFiler;
+  }
+
+  // Keyword search across orderCode, fullName, phone
+  if (req.query.keyword) {
+    const kw = req.query.keyword.trim();
+    if (kw.length > 0) {
+      const keywordRegex = new RegExp(kw, "i");
+      find.$or = [
+        { orderCode: keywordRegex },
+        { fullName: keywordRegex },
+        { phone: keywordRegex }
+      ];
+    }
+  }
 
   const orderList = await Order
     .find(find)
@@ -15,20 +44,26 @@ module.exports.list = async (req, res) => {
     });
 
   for (const orderDetail of orderList) {
-    orderDetail.paymentMethodName = variableConfig.paymentMethod.find(item => item.value == orderDetail.paymentMethod).label;
-    
-    orderDetail.paymentStatusName = variableConfig.paymentStatus.find(item => item.value == orderDetail.paymentStatus).label;
+    // Safe mapping for payment method
+    const pm = variableConfig.paymentMethod.find(item => item.value == orderDetail.paymentMethod);
+    orderDetail.paymentMethodName = pm ? pm.label : (orderDetail.paymentMethod || "--");
 
-    orderDetail.statusName = variableConfig.orderStatus.find(item => item.value == orderDetail.status).label;
+    // Safe mapping for payment status
+    const ps = variableConfig.paymentStatus.find(item => item.value == orderDetail.paymentStatus);
+    orderDetail.paymentStatusName = ps ? ps.label : (orderDetail.paymentStatus || "--");
+
+    // Safe mapping for order status
+    const os = variableConfig.orderStatus.find(item => item.value == orderDetail.status);
+    orderDetail.statusName = os ? os.label : (orderDetail.status || "--");
 
     orderDetail.createdAtTime = moment(orderDetail.createdAt).format("HH:mm");
     orderDetail.createdAtDate = moment(orderDetail.createdAt).format("DD/MM/YYYY");
   }
 
-    res.render("admin/pages/order-list", {
-        pageTitle: "Quản lí đơn hàng",
-        orderList: orderList
-    })
+  res.render("admin/pages/order-list", {
+    pageTitle: "Quản lý đơn hàng",
+    orderList: orderList
+  })
 }
 module.exports.edit = async (req, res) => {
     try {

@@ -44,6 +44,6 @@ router.patch('/undo/:id', tourController.undoPatch)
 
 router.patch('/delete-destroy/:id', tourController.deleteDestroyPatch)
 
-router.patch('/trash/change-multi', tourController.trashChangeMultiPatch)
+router.patch('/change-multi', tourController.changeMultiPatch)
 
 module.exports = router;

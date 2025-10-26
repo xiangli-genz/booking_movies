@@ -8,7 +8,7 @@ const categoryHelper = require("../../helpers/category.helper");
 const { default: slugify } = require("slugify");
 
 module.exports.list = async (req, res) => {
-    const find = {
+  const find = {
     deleted: false
   };
 
@@ -68,16 +68,16 @@ module.exports.list = async (req, res) => {
     item.createdAtFormat = moment(item.createdAt).format("HH:mm - DD/MM/YYYY");
     item.updatedAtFormat = moment(item.updatedAt).format("HH:mm - DD/MM/YYYY");
   }
+
   const accountAdminList = await AccountAdmin
   .find({})
   .select("id fullName");
-  
-    res.render("admin/pages/tour-list", {
-        pageTitle: "Quản lý tour",
-        tourList: tourList,
-        accountAdminList: accountAdminList
 
-    });
+  res.render("admin/pages/tour-list", {
+    pageTitle: "Quản lý tour",
+    tourList: tourList,
+    accountAdminList: accountAdminList
+  })
 }
 
 module.exports.create = async (req, res) => {
@@ -376,32 +376,29 @@ module.exports.deleteDestroyPatch = async (req, res) => {
     })
   }
 }
-module.exports.trashChangeMultiPatch = async (req, res) => {
-  if(!req.permissions.includes("tour-trash")) {
-    res.json({
-      code: "error",
-      message: "Không có quyền sử dụng tính năng này!"
-    })
-    return;
-  }
-
+module.exports.changeMultiPatch = async (req, res) => {
   try {
     const { option, ids } = req.body;
 
     switch (option) {
-      case "undo":
+      case "active":
+      case "inactive":
         await Tour.updateMany({
           _id: { $in: ids }
         }, {
-          deleted: false
+          status: option
         });
-        req.flash("success", "Khôi phục thành công!");
+        req.flash("success", "Đổi trạng thái thành công!");
         break;
-      case "delete-destroy":
-        await Tour.deleteMany({
+      case "delete":
+        await Tour.updateMany({
           _id: { $in: ids }
+        }, {
+          deleted: true,
+          deletedBy: req.account.id,
+          deletedAt: Date.now()
         });
-        req.flash("success", "Xóa viễn viễn thành công!");
+        req.flash("success", "Xóa thành công!");
         break;
     }
 
@@ -415,3 +412,5 @@ module.exports.trashChangeMultiPatch = async (req, res) => {
     })
   }
 }
+
+
