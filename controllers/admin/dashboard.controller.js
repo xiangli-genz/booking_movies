@@ -2,7 +2,7 @@ const AccountAdmin = require("../../models/account-admin.model");
 const Order = require("../../models/order.model");
 
 module.exports.dashboard = async (req, res) => {
-    // Section 1
+  // Section 1
   const overview = {
     totalAdmin: 0,
     totalUser: 0,
@@ -10,26 +10,21 @@ module.exports.dashboard = async (req, res) => {
     totalPrice: 0
   };
 
-  overview.totalAdmin = await AccountAdmin.countDocuments({
-    deleted: false
-  });
+  overview.totalAdmin = await AccountAdmin.countDocuments({ deleted: false });
 
-  const orderList = await Order.find({
-    deleted: false
-  })
-
+  const orderList = await Order.find({ deleted: false });
   overview.totalOrder = orderList.length;
-
-  overview.totalPrice = orderList.reduce((sum, item) => {
-    return sum + item.total;
-  }, 0);
+  overview.totalPrice = orderList.reduce((sum, item) => sum + item.total, 0);
   // End Section 1
 
-    res.render("admin/pages/dashboard", {
-        pageTitle: "Tổng quan",
-    overview: overview
+  // Lấy 3 đơn hàng mới nhất
+  const orders = await Order.find({ deleted: false }).sort({ createdAt: -1 }).limit(3);
 
-    })
+  res.render("admin/pages/dashboard", {
+    pageTitle: "Tổng quan",
+    overview: overview,
+    orders: orders
+  });
 }
 module.exports.revenueChartPost = async (req, res) => {
   const { currentMonth, currentYear, previousMonth, previousYear, arrayDay } = req.body;

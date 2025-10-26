@@ -24,7 +24,7 @@ header.header
         i.fa-solid.fa-bars
       // Logo
       .inner-logo
-        a(href="index.html")
+        a(href="/")
           img(
             alt=settingWebsiteInfo.websiteName
             src=settingWebsiteInfo.logo
@@ -33,7 +33,7 @@ header.header
       nav.inner-menu
         ul
           li
-            a.active(href="index.html") Trang chủ
+            a.active(href="/") Trang chủ
           each item in categoryList
             li
               a(href=`/category/${item.slug}`) #{item.name}
@@ -44,9 +44,9 @@ header.header
                     li
                       a(href=`/category/${itemChild.slug}`) #{itemChild.name}
           li
-            a(href="#") Tin tức
+            a(href="/news") Tin tức
           li
-            a(href="#") Liên hệ
+            a(href="/contacts") Liên hệ
         .inner-overlay
       // Cart
       .inner-cart
