@@ -11,14 +11,6 @@ block main
             | Quay lại mua hàng
             i.fa-solid.fa-angle-right
         .inner-tour-list(cart-list)
-        .inner-coupon
-          form#coupon-form(action="")
-            input#coupon-input(
-              name="coupon" 
-              placeholder="Nhập mã giảm giá" 
-              type="text"
-              )
-            button(type="submit") Dùng Mã
         .inner-list-price
           .inner-item
             .inner-label Tạm tình:
@@ -70,13 +62,6 @@ block main
                   )
                 label(for="methodMoney") Thanh toán tiền mặt khi đi tour
               .inner-item
-                input#methodMomo(
-                  value="momo" 
-                  name="method" 
-                  type="radio"
-                  )
-                label(for="methodMomo") Ví MoMo
-              .inner-item
                 input#methodZaloPay(
                   value="zalopay" 
                   name="method" 
@@ -92,9 +77,9 @@ block main
                 label(for="methodBank") Chuyển khoản ngân hàng
             .inner-info-bank
               .inner-title Thông tin chuyển khoản
-              .inner-text Ngân hàng : Vietcombank
-              .inner-text Tên tài khoản: Le Van A
-              .inner-text STK: 0123456789
+              .inner-text Ngân hàng : CAKE BY VP BANK
+              .inner-text Tên tài khoản: TRINH TRUNG SON
+              .inner-text STK: 0867347102
           .inner-button
             button(type="submit") ĐẶT TOUR
   // End Section 12

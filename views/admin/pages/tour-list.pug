@@ -1,7 +1,6 @@
 extends ../layouts/default.pug
 
 block main
-  if (permissions.includes("tour-view"))
     h1.box-title Quản lý tour
 
     //- Section 4
@@ -45,12 +44,8 @@ block main
         .inner-search
           <i class="fa-solid fa-magnifying-glass"></i>
           input(type="text" placeholder="Tìm kiếm" search)
-        if (permissions.includes("tour-create"))
-          .inner-button-create
-            a(href=`/${pathAdmin}/tour/create`) + Tạo mới
-        if (permissions.includes("tour-trash"))
-          .inner-button-trash
-            a(href=`/${pathAdmin}/tour/trash`) Thùng rác
+        .inner-button-create
+          a(href=`/${pathAdmin}/tour/create`) + Tạo mới
     //- End Section 5
 
     //- Section 6
@@ -100,25 +95,15 @@ block main
                   div.inner-time #{item.updatedAtFormat}
                 td
                   .inner-buttons
-                    if (permissions.includes("tour-edit"))
-                      a(
-                          href=`/${pathAdmin}/tour/edit/${item.id}`
-                          class="inner-edit"
-                        ) <i class="fa-regular fa-pen-to-square"></i>
-                    if (permissions.includes("tour-delete"))
-                      button(
-                        class="inner-delete"
-                        button-delete
-                        data-api=`/${pathAdmin}/tour/delete/${item.id}`
-                      ) <i class="fa-regular fa-trash-can"></i>
+                    a(
+                        href=`/${pathAdmin}/tour/edit/${item.id}`
+                        class="inner-edit"
+                      ) <i class="fa-regular fa-pen-to-square"></i>
+                    button(
+                      class="inner-delete"
+                      button-delete
+                      data-api=`/${pathAdmin}/tour/delete/${item.id}`
+                    ) <i class="fa-regular fa-trash-can"></i>
 
     //- End Section 6
 
-    //- Section 7
-    .section-7
-      span(class="inner-label") Hiển thị 1 - 9 của 78
-      select(class="inner-pagination")
-        option Trang 1
-        option Trang 2
-        option Trang 3
-    //- End Section 7

@@ -1,9 +1,7 @@
 extends ../layouts/default.pug
 
 block main
-  if (permissions.includes("dashboard-view"))
     h1.box-title Tổng quan
-
     //- Section 1
     .section-1
       .inner-item
@@ -12,12 +10,6 @@ block main
           .inner-content
             .inner-title Quản trị viên
             .inner-number #{overview.totalAdmin.toLocaleString("vi-VN")}
-      .inner-item
-        .inner-icon
-          img(src="assets/images/section-1-icon-1.svg")
-        .inner-content
-          .inner-title Người dùng
-          .inner-number #{overview.totalUser.toLocaleString("vi-VN")}
       .inner-item
         .inner-icon
           img(src="assets/images/section-1-icon-2.svg")
@@ -85,8 +77,8 @@ block main
                   if order.discount
                     .inner-text Giảm: #{order.discount.toLocaleString('vi-VN')}đ
                   .inner-text Thanh toán: #{(order.total - (order.discount || 0)).toLocaleString('vi-VN')}đ
-                  .inner-text PTTT: #{order.paymentMethod}
-                  .inner-text TTTT: #{order.paymentStatus}
+                  .inner-text PTTT: #{order.paymentMethodName}
+                  .inner-text TTTT: #{order.paymentStatusName}
                 td.inner-text-right
                   .inner-text #{order.createdAt ? order.createdAt.toLocaleTimeString('vi-VN') : ''}
                   .inner-text #{order.createdAt ? order.createdAt.toLocaleDateString('vi-VN') : ''}

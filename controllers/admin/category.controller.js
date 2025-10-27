@@ -48,27 +48,6 @@ module.exports.list = async (req, res) => {
   }
   // Hết Tìm kiếm
 
-  // Phân trang
-  const limitItems = 3;
-  let page = 1;
-  if(req.query.page) {
-    const currentPage = parseInt(req.query.page);
-    if(currentPage > 0) {
-      page = currentPage;
-    }
-  }
-  const totalRecord = await Category.countDocuments(find);
-  const totalPage = Math.ceil(totalRecord/limitItems);
-  if(page > totalPage) {
-    page = totalPage;
-  }
-  const skip = (page - 1) * limitItems;
-  const pagination = {
-    skip: skip,
-    totalRecord: totalRecord,
-    totalPage: totalPage
-  };
-  // Hết Phân trang
 
 
   const categoryList = await Category
@@ -77,8 +56,6 @@ module.exports.list = async (req, res) => {
 
     position: "desc"
   })
-  .limit(limitItems)
-  .skip(skip)
 
 
   for (const item of categoryList) {
@@ -86,14 +63,14 @@ module.exports.list = async (req, res) => {
       const infoAccountCreated = await AccountAdmin.findOne({
         _id: item.createdBy
       })
-      item.createdByFullName = infoAccountCreated.fullName;
+      item.createdByFullName = infoAccountCreated ? infoAccountCreated.fullName : "-";
     }
 
     if(item.updatedBy) {
       const infoAccountUpdated = await AccountAdmin.findOne({
         _id: item.updatedBy
       })
-      item.updatedByFullName = infoAccountUpdated.fullName;
+      item.updatedByFullName = infoAccountUpdated ? infoAccountUpdated.fullName : "-";
     }
 
     item.createdAtFormat = moment(item.createdAt).format("HH:mm - DD/MM/YYYY");
@@ -103,14 +80,13 @@ module.exports.list = async (req, res) => {
   // Danh sách tài khoản quản trị
   const accountAdminList = await AccountAdmin
     .find({})
-    .select("id fullName");
+    .select("_id fullName");
   // Hết Danh sách tài khoản quản trị
 
     res.render("admin/pages/category-list", {
         pageTitle: "Quản lý danh mục",
         categoryList: categoryList,
         accountAdminList: accountAdminList,
-        pagination: pagination,
     });
 }
 module.exports.create = async (req, res) => {

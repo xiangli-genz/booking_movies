@@ -81,7 +81,7 @@ module.exports.list = async (req, res) => {
 }
 
 module.exports.create = async (req, res) => {
-    const categoryList = await Category.find({
+  const categoryList = await Category.find({
     deleted: false
   })
 
@@ -89,21 +89,14 @@ module.exports.create = async (req, res) => {
 
   const cityList = await City.find({});
 
-    res.render("admin/pages/tour-create", {
-        pageTitle: "Tạo tour",
+  res.render("admin/pages/tour-create", {
+    pageTitle: "Tạo tour",
     categoryList: categoryTree,
     cityList: cityList
   })
 }
 
 module.exports.createPost = async (req, res) => {
-  if(!req.permissions.includes("tour-create")) {
-    res.json({
-      code: "error",
-      message: "Không có quyền sử dụng tính năng này!"
-    })
-    return;
-  }
 
   if(req.body.position) {
     req.body.position = parseInt(req.body.position);
@@ -119,7 +112,6 @@ module.exports.createPost = async (req, res) => {
   } else {
     delete req.body.avatar;
   }
-
 
   req.body.priceAdult = req.body.priceAdult ? parseInt(req.body.priceAdult) : 0;
   req.body.priceChildren = req.body.priceChildren ? parseInt(req.body.priceChildren) : 0;
@@ -140,7 +132,6 @@ module.exports.createPost = async (req, res) => {
     delete req.body.images;
   }
 
-
   const newRecord = new Tour(req.body);
   await newRecord.save();
 
@@ -148,44 +139,9 @@ module.exports.createPost = async (req, res) => {
 
   res.json({
     code: "success"
-
-    });
+  })
 }
-module.exports.trash = async (req, res) => {
-    const find = {
-    deleted: true
-  };
 
-  const tourList = await Tour
-    .find(find)
-    .sort({
-      deletedAt: "desc"
-    })
-
-  for (const item of tourList) {
-    if(item.createdBy) {
-      const infoAccountCreated = await AccountAdmin.findOne({
-        _id: item.createdBy
-      })
-      item.createdByFullName = infoAccountCreated.fullName;
-    }
-
-    if(item.deletedBy) {
-      const infoAccountDeleted = await AccountAdmin.findOne({
-        _id: item.deletedBy
-      })
-      item.deletedByFullName = infoAccountDeleted.fullName;
-    }
-
-    item.createdAtFormat = moment(item.createdAt).format("HH:mm - DD/MM/YYYY");
-    item.deletedAtFormat = moment(item.deletedAt).format("HH:mm - DD/MM/YYYY");
-  }
-
-    res.render("admin/pages/tour-trash", {
-        pageTitle: "Thùng rác tour",
-        tourList: tourList
-    });
-}
 module.exports.edit = async (req, res) => {
   try {
     const id = req.params.id;
@@ -197,13 +153,12 @@ module.exports.edit = async (req, res) => {
 
     if(tourDetail) {
       tourDetail.departureDateFormat = moment(tourDetail.departureDate).format("YYYY-MM-DD");
-
       const categoryList = await Category.find({
         deleted: false
       })
   
       const categoryTree = categoryHelper.buildCategoryTree(categoryList);
-  
+
       const cityList = await City.find({});
   
       res.render("admin/pages/tour-edit", {
@@ -221,14 +176,6 @@ module.exports.edit = async (req, res) => {
 }
 
 module.exports.editPatch = async (req, res) => {
-  if(!req.permissions.includes("tour-edit")) {
-    res.json({
-      code: "error",
-      message: "Không có quyền sử dụng tính năng này!"
-    })
-    return;
-  }
-
   try {
     const id = req.params.id;
 
@@ -265,7 +212,6 @@ module.exports.editPatch = async (req, res) => {
       delete req.body.images;
     }
 
-
     await Tour.updateOne({
       _id: id,
       deleted: false
@@ -285,23 +231,12 @@ module.exports.editPatch = async (req, res) => {
 }
 
 module.exports.deletePatch = async (req, res) => {
-  if(!req.permissions.includes("tour-delete")) {
-    res.json({
-      code: "error",
-      message: "Không có quyền sử dụng tính năng này!"
-    })
-    return;
-  }
-
+ 
   try {
     const id = req.params.id;
     
-    await Tour.updateOne({
+   await Tour.deleteOne({
       _id: id
-    }, {
-      deleted: true,
-      deletedBy: req.account.id,
-      deletedAt: Date.now()
     })
 
     req.flash("success", "Xóa tour thành công!");
@@ -317,65 +252,6 @@ module.exports.deletePatch = async (req, res) => {
   }
 }
 
-module.exports.undoPatch = async (req, res) => {
-  if(!req.permissions.includes("tour-trash")) {
-    res.json({
-      code: "error",
-      message: "Không có quyền sử dụng tính năng này!"
-    })
-    return;
-  }
-
-  try {
-    const id = req.params.id;
-    
-    await Tour.updateOne({
-      _id: id
-    }, {
-      deleted: false
-    })
-
-    req.flash("success", "Khôi phục tour thành công!");
-
-    res.json({
-      code: "success"
-    })
-  } catch (error) {
-    res.json({
-      code: "error",
-      message: "Id không hợp lệ!"
-    })
-  }
-}
-
-module.exports.deleteDestroyPatch = async (req, res) => {
-  if(!req.permissions.includes("tour-trash")) {
-    res.json({
-      code: "error",
-      message: "Không có quyền sử dụng tính năng này!"
-    })
-    return;
-  }
-
-  try {
-    const id = req.params.id;
-    
-    await Tour.deleteOne({
-      _id: id
-    })
-
-    req.flash("success", "Đã xóa vĩnh viễn tour thành công!");
-
-    res.json({
-      code: "success"
-    })
-  } catch (error) {
-    res.json({
-      code: "error",
-      message: "Id không hợp lệ!"
-    })
-  }
-}
 module.exports.changeMultiPatch = async (req, res) => {
   try {
     const { option, ids } = req.body;
@@ -412,5 +288,3 @@ module.exports.changeMultiPatch = async (req, res) => {
     })
   }
 }
-
-

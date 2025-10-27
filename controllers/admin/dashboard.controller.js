@@ -1,5 +1,6 @@
 const AccountAdmin = require("../../models/account-admin.model");
 const Order = require("../../models/order.model");
+const variableConfig = require("../../config/variable");
 
 module.exports.dashboard = async (req, res) => {
   // Section 1
@@ -19,6 +20,46 @@ module.exports.dashboard = async (req, res) => {
 
   // Lấy 3 đơn hàng mới nhất
   const orders = await Order.find({ deleted: false }).sort({ createdAt: -1 }).limit(3);
+
+  // Process each order - calculate totals and map payment labels
+  for (const order of orders) {
+    // Map payment labels
+    const pm = variableConfig.paymentMethod.find(item => item.value == order.paymentMethod);
+    order.paymentMethodName = pm ? pm.label : (order.paymentMethod || "--");
+
+    const ps = variableConfig.paymentStatus.find(item => item.value == order.paymentStatus);
+    order.paymentStatusName = ps ? ps.label : (order.paymentStatus || "--");
+
+    // Calculate item prices and order total
+    order.subTotal = 0;
+    if (order.items && Array.isArray(order.items)) {
+      for (const item of order.items) {
+        // Calculate adult total
+        if (item.adult) {
+          item.adultPrice = item.priceNewAdult || item.priceAdult || 0;
+          item.adultTotal = item.adult * item.adultPrice;
+          order.subTotal += item.adultTotal;
+        }
+        // Calculate child total
+        if (item.child) {
+          item.childPrice = item.priceNewChildren || item.priceChildren || 0;
+          item.childTotal = item.child * item.childPrice;
+          order.subTotal += item.childTotal;
+        }
+        // Calculate baby total
+        if (item.baby) {
+          item.babyPrice = item.priceNewBaby || item.priceBaby || 0;
+          item.babyTotal = item.baby * item.babyPrice;
+          order.subTotal += item.babyTotal;
+        }
+      }
+    }
+    
+    // Set totals with safe defaults
+    order.subTotal = order.subTotal || 0;
+    order.discount = order.discount || 0;
+    order.total = (order.total || order.subTotal) - order.discount;
+  }
 
   res.render("admin/pages/dashboard", {
     pageTitle: "Tổng quan",

@@ -1,5 +1,5 @@
-const AccountAdmin = require("../../models/account-admin.model");
-const ForgotPassword = require("../../models/forgot-password.model");
+const AccountAdmin = require("../../models/account-admin.model")
+const ForgotPassword = require("../../models/forgot-password.model")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 
@@ -7,28 +7,28 @@ const generateHelper = require("../../helpers/generate.helper");
 const mailHelper = require("../../helpers/mail.helper");
 
 module.exports.login = async (req, res) => {
-    res.render("admin/pages/login", {
-        pageTitle: "Đăng nhập"
-    })
+  res.render("admin/pages/login",{
+    pageTitle: "Đăng nhập"
+  })
 }
 
 module.exports.loginPost = async (req, res) => {
-  const { email, password, rememberPassword } = req.body;
+  const {email, password, rememberPassword} = req.body;
 
   const existAccount = await AccountAdmin.findOne({
     email: email
   });
 
-  if(!existAccount) {
+  if (!existAccount) {
     res.json({
       code: "error",
-      message: "Email không tồn tại trong hệ thống!"
+      message: "Email không tồn tại!"
     });
     return;
   }
 
   const isPasswordValid = await bcrypt.compare(password, existAccount.password);
-  if(!isPasswordValid) {
+  if (!isPasswordValid) {
     res.json({
       code: "error",
       message: "Mật khẩu không đúng!"
@@ -36,7 +36,7 @@ module.exports.loginPost = async (req, res) => {
     return;
   }
 
-  if(existAccount.status != "active") {
+  if (existAccount.status != "active") {
     res.json({
       code: "error",
       message: "Tài khoản chưa được kích hoạt!"
@@ -44,7 +44,7 @@ module.exports.loginPost = async (req, res) => {
     return;
   }
 
-  // Tạo JWT
+  // Tạo JWt
   const token = jwt.sign(
     {
       id: existAccount.id,
@@ -52,77 +52,78 @@ module.exports.loginPost = async (req, res) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: rememberPassword ? '30d' : '1d' // Token có thời hạn 1 ngày hoặc 30 ngày
+      expiresIn: rememberPassword ? '30d' : "7d"
     }
   )
-
+  
   // Lưu token vào cookie
   res.cookie("token", token, {
-    maxAge: rememberPassword ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000), // Token có hiệu lực trong 1 ngày hoặc 30 ngày
+    maxAge: rememberPassword ? (30*24*60*60*1000) : (7*24*60*60*1000),
     httpOnly: true,
     sameSite: "strict"
   })
 
   res.json({
     code: "success",
-    message: "Đăng nhập tài khoản thành công!"
+    message: "Đăng nhập tài khoản  thành công!"
   });
 }
 
 module.exports.register = async (req, res) => {
-    res.render("admin/pages/register", {
-        pageTitle: "Đăng kí"
-    })
+  res.render("admin/pages/register",{
+    pageTitle: "Đăng ký"
+  })
+}
+
+module.exports.registerInitial = async (req, res) => {
+  res.render("admin/pages/register-initial",{
+    pageTitle: "Tài khoản đã được khởi tạo"
+  })
 }
 
 module.exports.registerPost = async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const {fullName, email, password} = req.body;
 
   const existAccount = await AccountAdmin.findOne({
     email: email
   });
 
-  if(existAccount) {
+  if (existAccount) {
     res.json({
       code: "error",
-      message: "Email đã tồn tại trong hệ thống!"
+      message: "Email đã tồn tại!"
     });
     return;
   }
 
-  const salt = await bcrypt.genSalt(10); // Tạo chuỗi ngẫu nhiên có 10 ký tự
-  const hashedPassword = await bcrypt.hash(password, salt); // Mã hóa mật khẩu với chuỗi ngẫu nhiên
+  // Mã hóa mật khẩu
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
 
   const newAccount = new AccountAdmin({
     fullName: fullName,
     email: email,
     password: hashedPassword,
-    status: "initial"
+    status: "active"
   });
 
   await newAccount.save();
 
   res.json({
     code: "success",
-    message: "Đăng ký tài khoản thành công!"
+    message: "Đăng ký thành công!"
   });
 }
 
-module.exports.registerInitial = async (req, res) => {
-  res.render("admin/pages/register-initial", {
-    pageTitle: "Tài khoản đã được khởi tạo"
+module.exports.forgotPassword = async (req, res) => {
+  res.render("admin/pages/forgot-password",{
+    pageTitle: "Quên mật khẩu"
   })
 }
 
-module.exports.forgotPassword = async (req, res) => {
-    res.render("admin/pages/forgot-password", {
-        pageTitle: "Quên mật khẩu"
-    })
-}
 module.exports.forgotPasswordPost = async (req, res) => {
-  const { email } = req.body;
+ const {email} = req.body;
 
-  // Kiểm tra xem email có tồn tại trong hệ thống không
   const existAccount = await AccountAdmin.findOne({
     email: email
   })
@@ -130,12 +131,12 @@ module.exports.forgotPasswordPost = async (req, res) => {
   if(!existAccount) {
     res.json({
       code: "error",
-      message: "Email không tồn tại trong hệ thông!"
+      message: "Email không tồn tại!"
     })
     return;
   }
 
-  // Kiểm tra email đã tồn tại trong ForgotPassword chưa
+  //kiem tra xem email da gui otp chua
   const existEmailInForgotPassword = await ForgotPassword.findOne({
     email: email
   })
@@ -143,42 +144,43 @@ module.exports.forgotPasswordPost = async (req, res) => {
   if(existEmailInForgotPassword) {
     res.json({
       code: "error",
-      message: "Vui lòng gửi lại yêu cầu sau 5 phút!"
+      message: "Email đã được gửi mã OTP, vui lòng kiểm tra email và thử lại sau 5 phút! "
     })
     return;
   }
 
   // Tạo mã OTP
   const otp = generateHelper.generateRandomNumber(6);
-
-  // Lưu vào database: email, otp. sau 5 phút sẽ tự động xóa bản ghi.
+  
+  // Lưu mã OTP vào DB
   const newRecord = new ForgotPassword({
     email: email,
     otp: otp,
-    expireAt: Date.now() + 5*60*1000
+    expireAt: Date.now() + 5*60*1000 // 5 phút
   })
   await newRecord.save();
 
-  // Gửi mã OTP qua email cho người dùng tự động
-  const subject = `Mã OTP lấy lại mật khẩu`;
-  const content = `Mã OTP của bạn là <b style="color: green;">${otp}</b>. Mã OTP có hiệu lực trong 5 phút, vui lòng không cung cấp cho bất kỳ ai.`;
-  mailHelper.sendMail(email, subject, content);
+// Gửi mã OTP về email
+const subject = `Mã OTP lấy lại mật khẩu`;
+const content = `Mã OTP của bạn là <b style="color: green;">${otp}</b>. Mã OTP có hiệu lực trong 5 phút, vui lòng không cung cấp cho bất kỳ ai.`;
+mailHelper.sendMail(email, subject, content);
 
   res.json({
     code: "success",
-    message: "Đã gửi mã OTP qua email"
+    message: "Gửi mã OTP thành công!"
   });
 }
 
 module.exports.otpPassword = async (req, res) => {
-    res.render("admin/pages/otp-password", {
-        pageTitle: "Xác thực OTP"
-    })
+  res.render("admin/pages/otp-password",{
+    pageTitle: "Xác thực OTP"
+  })
 }
+
 module.exports.otpPasswordPost = async (req, res) => {
   const { otp, email } = req.body;
 
-  // Kiểm tra có tồn tại bản ghi trong ForgotPassword
+  // Kiem tra 
   const existRecord = await ForgotPassword.findOne({
     otp: otp,
     email: email
@@ -192,12 +194,11 @@ module.exports.otpPasswordPost = async (req, res) => {
     return;
   }
 
-  // Tìm thông tin của người dùng trong AccountAdmin
   const account = await AccountAdmin.findOne({
     email: email
   })
 
-  // Tạo JWT
+  // Tạo JWt
   const token = jwt.sign(
     {
       id: account.id,
@@ -205,13 +206,13 @@ module.exports.otpPasswordPost = async (req, res) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: '1d' // Token có thời hạn 1 ngày
+      expiresIn: '1d'
     }
   )
-
+  
   // Lưu token vào cookie
   res.cookie("token", token, {
-    maxAge: 24 * 60 * 60 * 1000, // Token có hiệu lực trong 1 ngày
+    maxAge: 24*60*60*1000,
     httpOnly: true,
     sameSite: "strict"
   })
@@ -223,17 +224,17 @@ module.exports.otpPasswordPost = async (req, res) => {
 }
 
 module.exports.resetPassword = async (req, res) => {
-    res.render("admin/pages/reset-password", {
-        pageTitle: "Đặt lại mật khẩu"
-    })
+  res.render("admin/pages/reset-password",{
+    pageTitle: "Đặt lại mật khẩu"
+  })
 }
-module.exports.resetPasswordPost = async (req, res) => {
-  const { password } = req.body;
 
-  // Mã hóa mật khẩu với bcrypt
-  const salt = await bcrypt.genSalt(10); // Tạo ra chuỗi ngẫu nhiên có 10 ký tự
-  const hashedPassword = await bcrypt.hash(password, salt);
+module.exports.resetPasswordPost = async (req, res) => {
+  const {password} = req.body;
   
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
   await AccountAdmin.updateOne({
     _id: req.account.id,
     deleted: false,
@@ -244,7 +245,7 @@ module.exports.resetPasswordPost = async (req, res) => {
 
   res.json({
     code: "success",
-    message: "Đổi mật khẩu thành công!"
+    message: "Đổi mật khẩu thành công!",
   })
 }
 

@@ -130,3 +130,25 @@ module.exports.editPatch = async (req, res) => {
     })
   }
 }
+
+module.exports.deletePatch = async (req, res) => {
+ 
+  try {
+    const id = req.params.id;
+    
+   await Order.deleteOne({
+      _id: id
+    })
+
+    req.flash("success", "Xóa tour thành công!");
+
+    res.json({
+      code: "success"
+    })
+  } catch (error) {
+    res.json({
+      code: "error",
+      message: "Id không hợp lệ!"
+    })
+  }
+}

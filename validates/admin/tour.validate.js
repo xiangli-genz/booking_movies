@@ -20,13 +20,13 @@ module.exports.createPost = (req, res, next) => {
     stockAdult: Joi.string().allow(''),
     stockChildren: Joi.string().allow(''),
     stockBaby: Joi.string().allow(''),
-    locations: Joi.string().allow(''),
+  locations: Joi.alternatives().try(Joi.string(), Joi.array()).allow(''),
     time: Joi.string().allow(''),
     vehicle: Joi.string().allow(''),
     departureDate: Joi.string().allow(''),
     information: Joi.string().allow(''),
-    schedules: Joi.string().allow(''),
-    images: Joi.string().allow(''),
+  schedules: Joi.alternatives().try(Joi.string(), Joi.array()).allow(''),
+  images: Joi.alternatives().try(Joi.string(), Joi.array()).allow(''),
   });
 
   const { error } = schema.validate(req.body);
