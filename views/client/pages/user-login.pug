@@ -1,0 +1,36 @@
+extends ../layouts/default.pug
+
+block main
+  .section-12
+    .container
+      .inner-wrap
+        h2.inner-title-main Đăng Nhập
+        form#user-login-form
+          .inner-info
+            .inner-inputs
+              .inner-input
+                input#email-input(
+                  placeholder="Email *" 
+                  name="email" 
+                  type="email"
+                )
+              .inner-input
+                input#password-input(
+                  placeholder="Mật khẩu *" 
+                  name="password" 
+                  type="password"
+                )
+            .inner-meta
+              .inner-confirm
+                input#remember-password(
+                  type="checkbox"
+                  name="rememberPassword"
+                  class="inner-check"
+                )
+                label(for="remember-password") Nhớ mật khẩu
+              a(href="/user/forgot-password") Quên mật khẩu?
+          .inner-button
+            button(type="submit") Đăng Nhập
+        .inner-more
+          span Chưa có tài khoản?
+          a(href="/user/register") Đăng ký

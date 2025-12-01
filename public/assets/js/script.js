@@ -831,3 +831,391 @@ if(pageCart) {
   drawCart();
 }
 // End Page Cart
+// User Register Form
+const userRegisterForm = document.querySelector("#user-register-form");
+if (userRegisterForm) {
+  const validation = new JustValidate('#user-register-form');
+
+  validation
+    .addField('#full-name-input', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập họ tên!'
+      },
+      {
+        rule: 'minLength',
+        value: 5,
+        errorMessage: 'Họ tên phải có ít nhất 5 ký tự!',
+      },
+      {
+        rule: 'maxLength',
+        value: 50,
+        errorMessage: 'Họ tên không được vượt quá 50 ký tự!',
+      },
+    ])
+    .addField('#email-input', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập email!'
+      },
+      {
+        rule: 'email',
+        errorMessage: 'Email không đúng định dạng!'
+      },
+    ])
+    .addField('#phone-input', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập số điện thoại!'
+      },
+      {
+        rule: 'customRegexp',
+        value: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g,
+        errorMessage: 'Số điện thoại không đúng định dạng!'
+      },
+    ])
+    .addField('#password-input', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu!'
+      },
+      {
+        rule: 'minLength',
+        value: 8,
+        errorMessage: 'Mật khẩu phải có ít nhất 8 ký tự!',
+      },
+      {
+        rule: 'customRegexp',
+        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        errorMessage: 'Mật khẩu phải chứa chữ hoa, chữ thường, số và ký tự đặc biệt!',
+      },
+    ])
+    .onSuccess((event) => {
+      const formData = {
+        fullName: event.target.fullName.value,
+        email: event.target.email.value,
+        phone: event.target.phone.value,
+        password: event.target.password.value
+      };
+
+      fetch(`/user/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.code == "error") {
+            alert(data.message);
+          }
+
+          if (data.code == "success") {
+            alert(data.message);
+            window.location.href = "/user/profile";
+          }
+        });
+    });
+}
+
+// User Login Form
+const userLoginForm = document.querySelector("#user-login-form");
+if (userLoginForm) {
+  const validation = new JustValidate('#user-login-form');
+
+  validation
+    .addField('#email-input', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập email!'
+      },
+      {
+        rule: 'email',
+        errorMessage: 'Email không đúng định dạng!'
+      },
+    ])
+    .addField('#password-input', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu!'
+      },
+    ])
+    .onSuccess((event) => {
+      const formData = {
+        email: event.target.email.value,
+        password: event.target.password.value,
+        rememberPassword: event.target.rememberPassword.checked
+      };
+
+      fetch(`/user/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.code == "error") {
+            alert(data.message);
+          }
+
+          if (data.code == "success") {
+            alert(data.message);
+            window.location.href = "/";
+          }
+        });
+    });
+}
+
+// User Profile Form
+const userProfileForm = document.querySelector("#user-profile-form");
+if (userProfileForm) {
+  userProfileForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(userProfileForm);
+
+    fetch(`/user/profile/edit`, {
+      method: "PATCH",
+      body: formData
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.code == "error") {
+          alert(data.message);
+        }
+
+        if (data.code == "success") {
+          window.location.reload();
+        }
+      });
+  });
+}
+
+// User Change Password Form
+const userChangePasswordForm = document.querySelector("#user-change-password-form");
+if (userChangePasswordForm) {
+  const validation = new JustValidate('#user-change-password-form');
+
+  validation
+    .addField('input[name="oldPassword"]', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu cũ!'
+      },
+    ])
+    .addField('input[name="password"]', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu mới!'
+      },
+      {
+        rule: 'minLength',
+        value: 8,
+        errorMessage: 'Mật khẩu phải có ít nhất 8 ký tự!',
+      },
+    ])
+    .addField('input[name="confirmPassword"]', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng xác nhận mật khẩu!'
+      },
+      {
+        validator: (value, fields) => {
+          return value === fields['input[name="password"]'].elem.value;
+        },
+        errorMessage: 'Mật khẩu xác nhận không khớp!',
+      },
+    ])
+    .onSuccess((event) => {
+      const formData = {
+        oldPassword: event.target.oldPassword.value,
+        password: event.target.password.value
+      };
+
+      fetch(`/user/change-password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.code == "error") {
+            alert(data.message);
+          }
+
+          if (data.code == "success") {
+            alert(data.message);
+            window.location.href = "/user/profile";
+          }
+        });
+    });
+}
+
+// User Forgot Password Form
+const userForgotPasswordForm = document.querySelector("#user-forgot-password-form");
+if (userForgotPasswordForm) {
+  const validation = new JustValidate('#user-forgot-password-form');
+
+  validation
+    .addField('input[name="email"]', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập email!'
+      },
+      {
+        rule: 'email',
+        errorMessage: 'Email không đúng định dạng!'
+      },
+    ])
+    .onSuccess((event) => {
+      const formData = {
+        email: event.target.email.value
+      };
+
+      fetch(`/user/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.code == "error") {
+            alert(data.message);
+          }
+
+          if (data.code == "success") {
+            alert(data.message);
+            localStorage.setItem("forgotPasswordEmail", formData.email);
+            window.location.href = "/user/otp-password";
+          }
+        });
+    });
+}
+
+// User OTP Password Form
+const userOtpPasswordForm = document.querySelector("#user-otp-password-form");
+if (userOtpPasswordForm) {
+  const email = localStorage.getItem("forgotPasswordEmail");
+  if (email) {
+    userOtpPasswordForm.querySelector('input[name="email"]').value = email;
+  }
+
+  const validation = new JustValidate('#user-otp-password-form');
+
+  validation
+    .addField('input[name="otp"]', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mã OTP!'
+      },
+    ])
+    .onSuccess((event) => {
+      const formData = {
+        otp: event.target.otp.value,
+        email: event.target.email.value
+      };
+
+      fetch(`/user/otp-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.code == "error") {
+            alert(data.message);
+          }
+
+          if (data.code == "success") {
+            alert(data.message);
+            localStorage.removeItem("forgotPasswordEmail");
+            window.location.href = "/user/reset-password";
+          }
+        });
+    });
+}
+
+// User Reset Password Form
+const userResetPasswordForm = document.querySelector("#user-reset-password-form");
+if (userResetPasswordForm) {
+  const validation = new JustValidate('#user-reset-password-form');
+
+  validation
+    .addField('input[name="password"]', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu mới!'
+      },
+      {
+        rule: 'minLength',
+        value: 8,
+        errorMessage: 'Mật khẩu phải có ít nhất 8 ký tự!',
+      },
+    ])
+    .addField('input[name="confirmPassword"]', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng xác nhận mật khẩu!'
+      },
+      {
+        validator: (value, fields) => {
+          return value === fields['input[name="password"]'].elem.value;
+        },
+        errorMessage: 'Mật khẩu xác nhận không khớp!',
+      },
+    ])
+    .onSuccess((event) => {
+      const formData = {
+        password: event.target.password.value
+      };
+
+      fetch(`/user/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.code == "error") {
+            alert(data.message);
+          }
+
+          if (data.code == "success") {
+            alert(data.message);
+            window.location.href = "/user/login";
+          }
+        });
+    });
+}
+
+// Logout
+const logoutLink = document.querySelector(".logout-link");
+if (logoutLink) {
+  logoutLink.addEventListener("click", () => {
+    if (confirm("Bạn có chắc muốn đăng xuất?")) {
+      fetch(`/user/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.code == "success") {
+            window.location.href = "/";
+          }
+        });
+    }
+  });
+}
