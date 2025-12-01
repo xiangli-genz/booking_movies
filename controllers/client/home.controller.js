@@ -17,10 +17,8 @@ module.exports.home = async (req, res) => {
     .limit(6)
 
   for(const item of tourListSection2) {
-    // Format departure date
     item.departureDateFormat = moment(item.departureDate).format("DD/MM/YYYY");
     
-    // Calculate remaining slots
     item.stockAdult = item.stock || 0;
     if (item.soldCount) {
       item.stockAdult -= item.soldCount;
@@ -29,7 +27,7 @@ module.exports.home = async (req, res) => {
   // End Section 2
 
   // Section 4: Tour Trong Nước
-  const categoryIdSection4 = "68fa17f5a45ecc987bb25a41"; // id danh mục Tour Trong Nước
+  const categoryIdSection4 = "692c7fc0d388a612b72ab8ad"; // id danh mục Tour Trong Nước
   const listCategoryId = await categoryHelper.getAllSubcategoryIds(categoryIdSection4);
 
   const tourListSection4 = await Tour
@@ -41,7 +39,7 @@ module.exports.home = async (req, res) => {
     .sort({
       position: "desc"
     })
-    .limit(8)
+    .limit(3)
 
   for(const item of tourListSection4) {
     item.departureDateFormat = moment(item.departureDate).format("DD/MM/YYYY");
@@ -49,7 +47,7 @@ module.exports.home = async (req, res) => {
   // End Section 4: Tour Trong Nước
 
   // Section 5: Tour Nước Ngoài
-  const categoryIdSection5 = "68fa17faa45ecc987bb25a49"; // id danh mục Tour Nước Ngoài
+  const categoryIdSection5 = "692c7fd6d388a612b72ab8b8"; // id danh mục Tour Nước Ngoài
   const listCategoryIdSection5 = await categoryHelper.getAllSubcategoryIds(categoryIdSection5);
 
   const tourListSection5 = await Tour
@@ -61,7 +59,7 @@ module.exports.home = async (req, res) => {
     .sort({
       position: "desc"
     })
-    .limit(8)
+    .limit(3)
 
   for(const item of tourListSection5) {
     item.departureDateFormat = moment(item.departureDate).format("DD/MM/YYYY");
