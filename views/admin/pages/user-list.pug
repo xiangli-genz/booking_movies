@@ -9,33 +9,36 @@ block main
       .inner-item.inner-label
         <i class="fa-solid fa-filter"></i> Bộ lọc
       .inner-item
-        select
+        select(filter-status)
           option(value="") Trạng thái
-          option(value="") Hoạt động
-          option(value="") Tạm dừng
+          option(value="active") Hoạt động
+          option(value="inactive") Tạm dừng
       .inner-item.inner-date
-        input(type="date")
+        input(type="date" filter-start-date)
         span -
-        input(type="date")
-      .inner-item.inner-reset
+        input(type="date" filter-end-date)
+      .inner-item.inner-reset(filter-reset)
         <i class="fa-solid fa-rotate-left"></i> Xóa bộ lọc
   //- End Section 4
 
   //- Section 5
   .section-5
     .inner-wrap
-      .inner-change-status
+      .inner-change-status(
+        change-multi
+        data-api=`/${pathAdmin}/user/change-multi`
+      )
         .inner-item
           select
             option(value="") -- Hành động --
-            option(value="") Hoạt động
-            option(value="") Dừng hoạt động
-            option(value="") Xóa
+            option(value="active") Hoạt động
+            option(value="inactive") Dừng hoạt động
+            option(value="delete") Xóa
         .inner-item
           button Áp dụng
       .inner-search
         <i class="fa-solid fa-magnifying-glass"></i>
-        input(type="text" placeholder="Tìm kiếm")
+        input(type="text" placeholder="Tìm kiếm" search)
   //- End Section 5
 
   //- Section 6
@@ -45,30 +48,42 @@ block main
         thead
           tr
             th(class="inner-center")
-              input(type="checkbox" class="inner-check")
+              input(type="checkbox" class="inner-check" check-all)
             th Họ tên
             th(class="inner-center") Ảnh đại diện
             th Email
             th Số điện thoại
             th Địa chỉ
-            th Trạng thái
+            th(class="inner-center") Trạng thái
+            th Ngày tạo
             th Hành động
         tbody
-          tr
-            td(class="inner-center")
-              input(type="checkbox" class="inner-check")
-            td Lê Văn A
-            td(class="inner-center")
-              img(src="/admin/assets/images/avatar.jpg" class="inner-avatar")
-            td levana@gmail.com
-            td 01234567890
-            td Số 123, đường ABC,...
-            td
-              .badge.badge-green Hoạt động
-            td
-              .inner-buttons
-                button(class="inner-edit") <i class="fa-regular fa-pen-to-square"></i>
-                button(class="inner-delete") <i class="fa-regular fa-trash-can"></i>
+          each item in userList
+            tr
+              td(class="inner-center")
+                input(type="checkbox" class="inner-check" check-item=item.id)
+              td #{item.fullName}
+              td(class="inner-center")
+                if item.avatar
+                  img(src=item.avatar class="inner-avatar")
+                else
+                  img(src="/admin/assets/images/avatar.jpg" class="inner-avatar")
+              td #{item.email}
+              td #{item.phone || '--'}
+              td #{item.address || '--'}
+              td(class="inner-center")
+                if (item.status == "active")
+                  .badge.badge-green Hoạt động
+                else if (item.status == "inactive")
+                  .badge.badge-red Tạm dừng
+              td #{item.createdAtFormat}
+              td
+                .inner-buttons
+                  button(
+                    class="inner-delete"
+                    button-delete
+                    data-api=`/${pathAdmin}/user/delete/${item.id}`
+                  ) <i class="fa-regular fa-trash-can"></i>
   //- End Section 6
 
   //- Section 7

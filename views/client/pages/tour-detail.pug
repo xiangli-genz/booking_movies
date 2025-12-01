@@ -3,7 +3,6 @@ include ../mixins/box-breadcrumb.pug
 
 block main
     +box-breadcrumb(breadcrumb)
-    // End Breadcrumb
     
     // Section 10
     .section-10
@@ -32,20 +31,128 @@ block main
                             src=image
                             )
             .box-tour-info
-              .inner-title Thông Tin Tour
+              .inner-title Thông Tin Phim
               .inner-content !{tourDetail.information}
               .inner-read-more
                 button.button-outline Xem tất cả
-            .box-tour-schedule
-              .inner-title-main Lịch Trình Tour
-              .inner-list
-                each item in tourDetail.schedules
-                  .inner-item
-                    .inner-title #{item.title}
-                    .inner-content !{item.description}
+            
+            // Cinema Seat Selection
+            .box-cinema-seats
+              .inner-title-main Chọn Ghế Ngồi
+              .cinema-screen Màn Hình
+              
+              // Ghế Thường (33 ghế - 3 hàng x 11 ghế)
+              .seat-section
+                .seat-type-label Ghế Thường
+                .seat-rows
+                  - for(let row = 1; row <= 3; row++)
+                    .seat-row(data-row=`A${row}`)
+                      - for(let col = 1; col <= 11; col++)
+                        .seat(
+                          data-seat=`A${row}-${col}`
+                          data-type="normal"
+                          data-price="50000"
+                        ) A#{row}-#{col}
+              
+              // Ghế VIP (55 ghế - 5 hàng x 11 ghế)
+              .seat-section
+                .seat-type-label Ghế VIP
+                .seat-rows
+                  - for(let row = 1; row <= 5; row++)
+                    .seat-row(data-row=`V${row}`)
+                      - for(let col = 1; col <= 11; col++)
+                        .seat(
+                          data-seat=`V${row}-${col}`
+                          data-type="vip"
+                          data-price="60000"
+                        ) V#{row}-#{col}
+              
+              // Ghế Couple (3 ghế)
+              .seat-section
+                .seat-type-label Ghế Couple
+                .seat-rows
+                  .seat-row(data-row="C1")
+                    - for(let col = 1; col <= 3; col++)
+                      .seat.seat-couple(
+                        data-seat=`C1-${col}`
+                        data-type="couple"
+                        data-price="110000"
+                      ) C1-#{col}
+              
+              .seat-legend
+                .legend-item
+                  .seat.seat-available
+                  span Ghế trống
+                .legend-item
+                  .seat.seat-selected
+                  span Ghế đã chọn
+                .legend-item
+                  .seat.seat-booked
+                  span Ghế đã đặt
+            
+            // Food & Drink Combo
+            .box-cinema-combo
+              .inner-title-main Combo Đồ Ăn & Nước Uống
+              .combo-list
+                .combo-item
+                  .combo-image
+                    img(src="/assets/images/combo-popcorn.jpg" alt="Bắp rang bơ")
+                  .combo-info
+                    .combo-name Bắp Rang Bơ (Lớn)
+                    .combo-price 45.000đ
+                  .combo-quantity
+                    button.btn-minus(data-combo="popcorn") -
+                    input(type="number" value="0" min="0" data-combo-input="popcorn" readonly)
+                    button.btn-plus(data-combo="popcorn") +
+                
+                .combo-item
+                  .combo-image
+                    img(src="/assets/images/combo-coke.jpg" alt="Nước ngọt")
+                  .combo-info
+                    .combo-name Nước Ngọt (Lớn)
+                    .combo-price 35.000đ
+                  .combo-quantity
+                    button.btn-minus(data-combo="coke") -
+                    input(type="number" value="0" min="0" data-combo-input="coke" readonly)
+                    button.btn-plus(data-combo="coke") +
+                
+                .combo-item
+                  .combo-image
+                    img(src="/assets/images/combo-hotdog.jpg" alt="Hotdog")
+                  .combo-info
+                    .combo-name Hotdog
+                    .combo-price 30.000đ
+                  .combo-quantity
+                    button.btn-minus(data-combo="hotdog") -
+                    input(type="number" value="0" min="0" data-combo-input="hotdog" readonly)
+                    button.btn-plus(data-combo="hotdog") +
+                
+                .combo-item
+                  .combo-image
+                    img(src="/assets/images/combo-water.jpg" alt="Nước suối")
+                  .combo-info
+                    .combo-name Nước Suối
+                    .combo-price 15.000đ
+                  .combo-quantity
+                    button.btn-minus(data-combo="water") -
+                    input(type="number" value="0" min="0" data-combo-input="water" readonly)
+                    button.btn-plus(data-combo="water") +
+                
+                .combo-item.combo-set
+                  .combo-image
+                    img(src="/assets/images/combo-set.webp" alt="Combo Set")
+                  .combo-info
+                    .combo-name Combo Set (Bắp + 2 Nước)
+                    .combo-price 95.000đ
+                    .combo-save Tiết kiệm 20.000đ
+                  .combo-quantity
+                    button.btn-minus(data-combo="comboset") -
+                    input(type="number" value="0" min="0" data-combo-input="comboset" readonly)
+                    button.btn-plus(data-combo="comboset") +
+          
           .inner-right
             .box-tour-detail
-              .inner-title-main Chuyến Đi Của Bạn
+              .inner-title-main Thông Tin Đặt Vé
               .inner-product
                 .inner-image
                   img(
@@ -55,81 +162,414 @@ block main
                 .inner-info
                   .inner-title #{tourDetail.name}
               .inner-meta
-                
-                //- i.fa-solid.fa-ticket-simple
-                //- span Mã Tour:
-                //- span.inner-highlight 28T00001
-
                 .inner-item
-                  i.fa-solid.fa-calendar-days
-                  span Thời Gian:
+                  i.fa-solid.fa-clock
+                  span Thời Lượng:
                   span.inner-highlight #{tourDetail.time}
                 .inner-item
-                  i.fa-solid.fa-truck-plane
-                  span Phương Tiện:
-                  span.inner-highlight #{tourDetail.vehicle}
-                .inner-item
                   i.fa-solid.fa-calendar-days
-                  span Ngày Khởi Hành:
+                  span Ngày Chiếu:
                   span.inner-highlight #{tourDetail.departureDateFormat}
+              
               .inner-form
-                label.inner-label Khởi Hành Tại:
+                label.inner-label Chọn Rạp:
                 select(location-from)
                   each item in cityList
                     option(value=item.id) #{item.name}
-              .inner-quantity
-                label.inner-label Số Lượng Hành Khách
-                .inner-list
-                  .inner-item
-                    .inner-item-label Người lớn:
-                    .inner-item-input
-                      input(
-                        value="1" 
-                        min="0" 
-                        max=tourDetail.stockAdult
-                        type="number"
-                        input-stock-adult
-                        price=tourDetail.priceNewAdult
-                        )
-                    .inner-item-price
-                      span(stock-adult) 1
-                      span x
-                      span.inner-highlight #{tourDetail.priceNewAdult.toLocaleString("vi-VN")}
-                  .inner-item
-                    .inner-item-label Trẻ em:
-                    .inner-item-input
-                      input(
-                        value="0" 
-                        min="0" 
-                        max=tourDetail.stockChildren
-                        type="number"
-                        input-stock-children
-                      price=tourDetail.priceNewChildren
-                        )
-                    .inner-item-price
-                      span(stock-children) 0
-                      span x
-                      span.inner-highlight #{tourDetail.priceNewChildren.toLocaleString("vi-VN")}
-                  .inner-item
-                    .inner-item-label Em bé:
-                    .inner-item-input
-                      input(
-                        value="0" 
-                        min="0" 
-                        max=tourDetail.stockBaby
-                        type="number"
-                        input-stock-baby
-                      price=tourDetail.priceNewBaby
-                        )
-                    .inner-item-price
-                      span(stock-baby) 0
-                      span x
-                      span.inner-highlight #{tourDetail.priceNewBaby.toLocaleString("vi-VN")}
+              
+              // Selected Seats Display
+              .inner-selected-seats
+                label.inner-label Ghế Đã Chọn:
+                .selected-seats-list(id="selected-seats-display") Chưa chọn ghế
+              
+              // Combo Display
+              .inner-selected-combo
+                label.inner-label Combo Đã Chọn:
+                .selected-combo-list(id="selected-combo-display") Chưa chọn combo
+              
+              .inner-total-breakdown
+                .breakdown-item
+                  span Tiền vé:
+                  span.price(id="seat-price") 0đ
+                .breakdown-item
+                  span Tiền combo:
+                  span.price(id="combo-price") 0đ
+              
               .inner-total
                 .inner-total-label Tổng cộng:
                 .inner-total-price
-                  span(total-price) #{tourDetail.priceNewAdult.toLocaleString("vi-VN")}
+                  span(total-price) 0
                   span đ
+              
               button.inner-button-add-cart(tour-id=tourDetail.id) Thêm Vào Giỏ Hàng
 
-    // End Section 10
+    style.
+      .box-cinema-seats {
+        margin-top: 30px;
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 1.75px 3.51px 0px #0000001F;
+      }
+      
+      .cinema-screen {
+        background: linear-gradient(to bottom, #444, #222);
+        color: #fff;
+        text-align: center;
+        padding: 15px;
+        margin-bottom: 40px;
+        border-radius: 10px 10px 50% 50%;
+        font-weight: 600;
+        font-size: 18px;
+      }
+      
+      .seat-section {
+        margin-bottom: 30px;
+      }
+      
+      .seat-type-label {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--color-primary);
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 5px;
+      }
+      
+      .seat-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+      }
+      
+      .seat-row {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .seat {
+        width: 45px;
+        height: 45px;
+        border: 2px solid #ddd;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        background: #f0f0f0;
+        transition: all 0.3s;
+      }
+      
+      .seat:hover:not(.seat-booked) {
+        transform: scale(1.1);
+        border-color: var(--color-primary);
+      }
+      
+      .seat.seat-couple {
+        width: 95px;
+      }
+      
+      .seat.seat-selected {
+        background: var(--color-primary);
+        color: #fff;
+        border-color: var(--color-primary);
+      }
+      
+      .seat.seat-booked {
+        background: #ccc;
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+      
+      .seat[data-type="vip"] {
+        background: #fff3cd;
+      }
+      
+      .seat[data-type="couple"] {
+        background: #ffe6f0;
+      }
+      
+      .seat-legend {
+        margin-top: 30px;
+        display: flex;
+        gap: 30px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .legend-item .seat {
+        cursor: default;
+      }
+      
+      .box-cinema-combo {
+        margin-top: 30px;
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 1.75px 3.51px 0px #0000001F;
+      }
+      
+      .combo-list {
+        display: grid;
+        gap: 20px;
+      }
+      
+      .combo-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        transition: all 0.3s;
+      }
+      
+      .combo-item:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+      
+      .combo-item.combo-set {
+        border: 2px solid #ff6b6b;
+        background: #fff5f5;
+      }
+      
+      .combo-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      
+      .combo-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      
+      .combo-info {
+        flex: 1;
+      }
+      
+      .combo-name {
+        font-weight: 600;
+        font-size: 16px;
+        color: #333;
+        margin-bottom: 5px;
+      }
+      
+      .combo-price {
+        font-weight: 600;
+        font-size: 18px;
+        color: #ff6b6b;
+      }
+      
+      .combo-save {
+        font-size: 12px;
+        color: #28a745;
+        margin-top: 3px;
+      }
+      
+      .combo-quantity {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .btn-minus, .btn-plus {
+        width: 35px;
+        height: 35px;
+        border: 1px solid #ddd;
+        background: #fff;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+      
+      .btn-minus:hover, .btn-plus:hover {
+        background: var(--color-primary);
+        color: #fff;
+        border-color: var(--color-primary);
+      }
+      
+      .combo-quantity input {
+        width: 50px;
+        height: 35px;
+        text-align: center;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-weight: 600;
+      }
+      
+      .inner-selected-seats, .inner-selected-combo {
+        margin-bottom: 15px;
+      }
+      
+      .selected-seats-list, .selected-combo-list {
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 5px;
+        min-height: 40px;
+        font-size: 14px;
+        color: #666;
+      }
+      
+      .inner-total-breakdown {
+        margin-bottom: 15px;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 5px;
+      }
+      
+      .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+      
+      .breakdown-item:last-child {
+        margin-bottom: 0;
+      }
+      
+      @media (max-width: 767px) {
+        .seat {
+          width: 35px;
+          height: 35px;
+          font-size: 8px;
+        }
+        
+        .seat.seat-couple {
+          width: 75px;
+        }
+        
+        .seat-row {
+          gap: 5px;
+        }
+      }
+
+    script.
+      document.addEventListener('DOMContentLoaded', function() {
+        const selectedSeats = [];
+        const combos = {
+          popcorn: { quantity: 0, price: 45000, name: 'Bắp Rang Bơ' },
+          coke: { quantity: 0, price: 35000, name: 'Nước Ngọt' },
+          hotdog: { quantity: 0, price: 30000, name: 'Hotdog' },
+          water: { quantity: 0, price: 15000, name: 'Nước Suối' },
+          comboset: { quantity: 0, price: 95000, name: 'Combo Set' }
+        };
+        
+        // Seat Selection
+        const seats = document.querySelectorAll('.seat:not(.seat-booked)');
+        seats.forEach(seat => {
+          seat.addEventListener('click', function() {
+            if(this.classList.contains('seat-selected')) {
+              this.classList.remove('seat-selected');
+              const index = selectedSeats.indexOf(this.dataset.seat);
+              if(index > -1) selectedSeats.splice(index, 1);
+            } else {
+              this.classList.add('seat-selected');
+              selectedSeats.push(this.dataset.seat);
+            }
+            updateDisplay();
+          });
+        });
+        
+        // Combo Selection
+        document.querySelectorAll('.btn-plus').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const combo = this.dataset.combo;
+            combos[combo].quantity++;
+            document.querySelector(`input[data-combo-input="${combo}"]`).value = combos[combo].quantity;
+            updateDisplay();
+          });
+        });
+        
+        document.querySelectorAll('.btn-minus').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const combo = this.dataset.combo;
+            if(combos[combo].quantity > 0) {
+              combos[combo].quantity--;
+              document.querySelector(`input[data-combo-input="${combo}"]`).value = combos[combo].quantity;
+              updateDisplay();
+            }
+          });
+        });
+        
+        function updateDisplay() {
+          // Update selected seats display
+          const seatsDisplay = document.getElementById('selected-seats-display');
+          if(selectedSeats.length > 0) {
+            seatsDisplay.innerHTML = selectedSeats.join(', ');
+          } else {
+            seatsDisplay.innerHTML = 'Chưa chọn ghế';
+          }
+          
+          // Calculate seat price
+          let seatPrice = 0;
+          selectedSeats.forEach(seatId => {
+            const seat = document.querySelector(`[data-seat="${seatId}"]`);
+            seatPrice += parseInt(seat.dataset.price);
+          });
+          document.getElementById('seat-price').innerText = seatPrice.toLocaleString('vi-VN') + 'đ';
+          
+          // Update combo display
+          const comboDisplay = document.getElementById('selected-combo-display');
+          const selectedCombos = [];
+          let comboPrice = 0;
+          
+          Object.keys(combos).forEach(key => {
+            if(combos[key].quantity > 0) {
+              selectedCombos.push(`${combos[key].name} x${combos[key].quantity}`);
+              comboPrice += combos[key].price * combos[key].quantity;
+            }
+          });
+          
+          if(selectedCombos.length > 0) {
+            comboDisplay.innerHTML = selectedCombos.join('<br>');
+          } else {
+            comboDisplay.innerHTML = 'Chưa chọn combo';
+          }
+          document.getElementById('combo-price').innerText = comboPrice.toLocaleString('vi-VN') + 'đ';
+          
+          // Update total
+          const total = seatPrice + comboPrice;
+          document.querySelector('[total-price]').innerText = total.toLocaleString('vi-VN');
+        }
+        
+        // Add to cart with cinema booking data
+        document.querySelector('.inner-button-add-cart').addEventListener('click', function() {
+          if(selectedSeats.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 ghế!');
+            return;
+          }
+          
+          const bookingData = {
+            tourId: this.getAttribute('tour-id'),
+            seats: selectedSeats,
+            combos: combos,
+            locationFrom: document.querySelector('[location-from]').value
+          };
+          
+          // Save to localStorage and redirect
+          let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+          cart.push({
+            ...bookingData,
+            checked: true
+          });
+          localStorage.setItem('cart', JSON.stringify(cart));
+          
+          window.location.href = '/cart';
+        });
+      });
