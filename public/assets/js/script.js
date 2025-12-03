@@ -698,89 +698,89 @@ const drawCart = () => {
         // Hiển thị các item
         const htmlCart = data.cart.map(item => {
           // Hiển thị danh sách ghế
-        const seatsHtml = item.seats && item.seats.length > 0 
-          ? `<div class="detail-row">
-              <span class="detail-label">Ghế đã chọn:</span>
-              <span class="detail-value inner-seat-list">${item.seats.join(', ')}</span>
-            </div>`
-          : '';
-        
-        // Hiển thị danh sách combo
-        let combosHtml = '';
-        if (item.combos) {
-          const comboList = [];
-          Object.keys(item.combos).forEach(key => {
-            const combo = item.combos[key];
-            if (combo && combo.quantity > 0) {
-              comboList.push(`${combo.name} x${combo.quantity}`);
-            }
-          });
+          const seatsHtml = item.seats && item.seats.length > 0 
+            ? `<div class="detail-row">
+                <span class="detail-label">Ghế đã chọn:</span>
+                <span class="detail-value inner-seat-list">${item.seats.join(', ')}</span>
+              </div>`
+            : '';
           
-          if (comboList.length > 0) {
-            combosHtml = `<div class="detail-row">
-              <span class="detail-label">Combo:</span>
-              <span class="detail-value inner-combo-list">${comboList.join('<br>')}</span>
-            </div>`;
+          // Hiển thị danh sách combo
+          let combosHtml = '';
+          if (item.combos) {
+            const comboList = [];
+            Object.keys(item.combos).forEach(key => {
+              const combo = item.combos[key];
+              if (combo && combo.quantity > 0) {
+                comboList.push(`${combo.name} x${combo.quantity}`);
+              }
+            });
+            
+            if (comboList.length > 0) {
+              combosHtml = `<div class="detail-row">
+                <span class="detail-label">Combo:</span>
+                <span class="detail-value inner-combo-list">${comboList.join('<br>')}</span>
+              </div>`;
+            }
           }
-        }
-        
-        // Hiển thị chi tiết giá
-        const priceBreakdown = `
-          <div class="inner-price-breakdown">
-            <div class="detail-row">
-              <span class="detail-label">Tiền vé:</span>
-              <span class="detail-value">${item.totalSeatPrice.toLocaleString("vi-VN")}đ</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Tiền combo:</span>
-              <span class="detail-value">${item.totalComboPrice.toLocaleString("vi-VN")}đ</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label"><strong>Tổng cộng:</strong></span>
-              <span class="detail-value"><strong>${item.totalPrice.toLocaleString("vi-VN")}đ</strong></span>
-            </div>
-          </div>
-        `;
-
-        return `
-          <div class="inner-tour-item">
-            <div class="inner-actions">
-              <button class="inner-delete" button-delete tour-id="${item.tourId}">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-              <input 
-                class="inner-check" 
-                type="checkbox" ${item.checked ? 'checked' : ''}
-                input-check
-                tour-id="${item.tourId}"
-              >
-            </div>
-            <div class="inner-product">
-              <div class="inner-image">
-                <a href="/tour/detail/${item.slug}">
-                  <img alt="" src="${item.avatar}">
-                </a>
+          
+          // Hiển thị chi tiết giá
+          const priceBreakdown = `
+            <div class="inner-price-breakdown">
+              <div class="detail-row">
+                <span class="detail-label">Tiền vé:</span>
+                <span class="detail-value">${item.totalSeatPrice.toLocaleString("vi-VN")}đ</span>
               </div>
-              <div class="inner-content">
-                <div class="inner-title">
+              <div class="detail-row">
+                <span class="detail-label">Tiền combo:</span>
+                <span class="detail-value">${item.totalComboPrice.toLocaleString("vi-VN")}đ</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label"><strong>Tổng cộng:</strong></span>
+                <span class="detail-value"><strong>${item.totalPrice.toLocaleString("vi-VN")}đ</strong></span>
+              </div>
+            </div>
+          `;
+
+          return `
+            <div class="inner-tour-item">
+              <div class="inner-actions">
+                <button class="inner-delete" button-delete tour-id="${item.tourId}">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+                <input 
+                  class="inner-check" 
+                  type="checkbox" ${item.checked ? 'checked' : ''}
+                  input-check
+                  tour-id="${item.tourId}"
+                >
+              </div>
+              <div class="inner-product">
+                <div class="inner-image">
                   <a href="/tour/detail/${item.slug}">
-                    ${item.name}
+                    <img alt="" src="${item.avatar}">
                   </a>
                 </div>
-                <div class="inner-meta">
-                  <div class="inner-meta-item">Ngày Chiếu: <b>${item.departureDateFormat}</b></div>
-                  <div class="inner-meta-item">Rạp Chiếu: <b>${item.locationFromName}</b></div>
-                </div>
-                <div class="inner-booking-details">
-                  ${seatsHtml}
-                  ${combosHtml}
-                  ${priceBreakdown}
+                <div class="inner-content">
+                  <div class="inner-title">
+                    <a href="/tour/detail/${item.slug}">
+                      ${item.name}
+                    </a>
+                  </div>
+                  <div class="inner-meta">
+                    <div class="inner-meta-item">Ngày Chiếu: <b>${item.departureDateFormat}</b></div>
+                    <div class="inner-meta-item">Rạp Chiếu: <b>${item.locationFromName}</b></div>
+                  </div>
+                  <div class="inner-booking-details">
+                    ${seatsHtml}
+                    ${combosHtml}
+                    ${priceBreakdown}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        `;
-      });
+          `;
+        });
 
         const cartList = document.querySelector("[cart-list]");
         cartList.innerHTML = htmlCart.join("");
@@ -845,6 +845,48 @@ if(pageCart) {
   drawCart();
 }
 // End Page Cart
+
+// Box Movie Detail - Cinema Booking
+const boxMovieDetail = document.querySelector(".box-tour-detail");
+if(boxMovieDetail) {
+  const buttonAddToCart = boxMovieDetail.querySelector(".inner-button-add-cart");
+  
+  buttonAddToCart.addEventListener("click", () => {
+    const tourId = buttonAddToCart.getAttribute("tour-id");
+    const locationFrom = boxMovieDetail.querySelector("[location-from]").value;
+    
+    // Lấy thông tin ghế và combo từ window (đã được set bởi script trong tour-detail.pug)
+    const selectedSeats = window.selectedSeats || [];
+    const combos = window.selectedCombos || {};
+    
+    if(selectedSeats.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 ghế!");
+      return;
+    }
+
+    const cartItem = {
+      tourId: tourId,
+      locationFrom: locationFrom,
+      seats: selectedSeats,
+      combos: combos,
+      checked: true
+    };
+
+    const cart = JSON.parse(localStorage.getItem("cart"));
+    
+    const indexItemExist = cart.findIndex(item => item.tourId == tourId);
+    if(indexItemExist != -1) {
+      cart[indexItemExist] = cartItem;
+    } else {
+      cart.push(cartItem);
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    updateCartToServer(cart);
+    window.location.href = "/cart";
+  })
+}
+// End Box Movie Detail
 // User Register Form
 const userRegisterForm = document.querySelector("#user-register-form");
 if (userRegisterForm) {

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const cartItemSchema = new mongoose.Schema({
   tourId: String,
   locationFrom: String,
-  seats: [String], // Mảng các ghế đã chọn
+  seats: [String], // Mảng các ghế đã chọn (V1-1, C1-1, A1-1,...)
   combos: {
     popcorn: { quantity: Number, price: Number, name: String },
     coke: { quantity: Number, price: Number, name: String },

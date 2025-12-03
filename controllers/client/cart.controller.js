@@ -19,56 +19,60 @@ module.exports.detail = async (req, res) => {
       cart = user.cart || [];
     }
 
-  for(const item of cart) {
-    const tourInfo = await Tour.findOne({
-      _id: item.tourId,
-      status: "active",
-      deleted: false
-    });
-
-    if(tourInfo) {
-      item.avatar = tourInfo.avatar;
-      item.name = tourInfo.name;
-      item.slug = tourInfo.slug;
-      item.departureDateFormat = moment(tourInfo.departureDate).format("DD/MM/YYYY");
-      item.pricePerSeat = 50000;
-      item.totalSeatPrice = 0;
-      if (item.seats && item.seats.length > 0) {
-        item.seats.forEach(seat => {
-          if (seat.startsWith('V')) {
-            item.totalSeatPrice += 60000; // VIP
-          } else if (seat.startsWith('C')) {
-            item.totalSeatPrice += 110000; // Couple
-          } else {
-            item.totalSeatPrice += 50000; // Normal
-          }
-        });
-      }
-      item.totalComboPrice = 0;
-      if (item.combos) {
-        Object.keys(item.combos).forEach(key => {
-          const combo = item.combos[key];
-          if (combo && combo.quantity > 0) {
-            item.totalComboPrice += combo.price * combo.quantity;
-          }
-        });
-      }
-      item.totalPrice = item.totalSeatPrice + item.totalComboPrice;
-
-      const city = await City.findOne({
-        _id: item.locationFrom
+    for(const item of cart) {
+      const tourInfo = await Tour.findOne({
+        _id: item.tourId,
+        status: "active",
+        deleted: false
       });
-      item.locationFromName = city.name;
-    } else {
-      // Nếu không lấy được tour thì xóa tour khỏi giỏ hàng
-      const indexItem = cart.findIndex(tour => tour.tourId == item.tourId);
-      if (indexItem !== -1) {
-        cart.splice(indexItem, 1);
+
+      if(tourInfo) {
+        item.avatar = tourInfo.avatar;
+        item.name = tourInfo.name;
+        item.slug = tourInfo.slug;
+        item.departureDateFormat = moment(tourInfo.departureDate).format("DD/MM/YYYY");
+        
+        // Tính tiền ghế
+        item.totalSeatPrice = 0;
+        if (item.seats && item.seats.length > 0) {
+          item.seats.forEach(seat => {
+            if (seat.startsWith('V')) {
+              item.totalSeatPrice += 60000; // VIP
+            } else if (seat.startsWith('C')) {
+              item.totalSeatPrice += 110000; // Couple
+            } else {
+              item.totalSeatPrice += 50000; // Standard (Normal)
+            }
+          });
+        }
+        
+        // Tính tiền combo
+        item.totalComboPrice = 0;
+        if (item.combos) {
+          Object.keys(item.combos).forEach(key => {
+            const combo = item.combos[key];
+            if (combo && combo.quantity > 0) {
+              item.totalComboPrice += combo.price * combo.quantity;
+            }
+          });
+        }
+        
+        item.totalPrice = item.totalSeatPrice + item.totalComboPrice;
+
+        const city = await City.findOne({
+          _id: item.locationFrom
+        });
+        item.locationFromName = city ? city.name : "Chưa chọn";
+      } else {
+        // Nếu không lấy được tour thì xóa khỏi giỏ hàng
+        const indexItem = cart.findIndex(tour => tour.tourId == item.tourId);
+        if (indexItem !== -1) {
+          cart.splice(indexItem, 1);
+        }
       }
     }
-  }
 
-  res.json({
+    res.json({
       code: "success",
       cart: cart
     })
