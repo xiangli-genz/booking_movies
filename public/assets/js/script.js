@@ -618,18 +618,67 @@ if(boxTourDetail) {
 // End Box Tour Detail
 
 // Initial Cart
-const cart = localStorage.getItem("cart");
-if(!cart) {
-  localStorage.setItem("cart", JSON.stringify([]));
+const initCart = () => {
+  const localCart = localStorage.getItem("cart");
+  if (!localCart) {
+    localStorage.setItem("cart", JSON.stringify([]));
+  }
+  
+  // Sync với server nếu user đã đăng nhập
+  syncCartWithServer();
 }
+
+// Sync giỏ hàng với server
+const syncCartWithServer = async () => {
+  const localCart = JSON.parse(localStorage.getItem("cart") || "[]");
+  
+  try {
+    const response = await fetch('/cart/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ localCart })
+    });
+    
+    const data = await response.json();
+    
+    if (data.code === "success" && data.cart) {
+      localStorage.setItem("cart", JSON.stringify(data.cart));
+      updateMiniCart();
+    }
+  } catch (error) {
+    console.error("Error syncing cart:", error);
+  }
+}
+
+// Update giỏ hàng lên server
+const updateCartToServer = async (cart) => {
+  try {
+    await fetch('/cart/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ cart })
+    });
+  } catch (error) {
+    console.error("Error updating cart:", error);
+  }
+}
+
+initCart();
 // End Initial Cart
 
 // Mini Cart
 const miniCart = document.querySelector("[mini-cart]");
-if(miniCart) {
-  const cart = JSON.parse(localStorage.getItem("cart"));
-  miniCart.innerHTML = cart.length;
+const updateMiniCart = () => {
+  if (miniCart) {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    miniCart.innerHTML = cart.length;
+  }
 }
+updateMiniCart();
 // End Mini Cart
 
 // Page Cart
@@ -647,7 +696,53 @@ const drawCart = () => {
     .then(data => {
       if(data.code == "success") {
         // Hiển thị các item
-        const htmlCart = data.cart.map(item => `
+        const htmlCart = data.cart.map(item => {
+          // Hiển thị danh sách ghế
+        const seatsHtml = item.seats && item.seats.length > 0 
+          ? `<div class="detail-row">
+              <span class="detail-label">Ghế đã chọn:</span>
+              <span class="detail-value inner-seat-list">${item.seats.join(', ')}</span>
+            </div>`
+          : '';
+        
+        // Hiển thị danh sách combo
+        let combosHtml = '';
+        if (item.combos) {
+          const comboList = [];
+          Object.keys(item.combos).forEach(key => {
+            const combo = item.combos[key];
+            if (combo && combo.quantity > 0) {
+              comboList.push(`${combo.name} x${combo.quantity}`);
+            }
+          });
+          
+          if (comboList.length > 0) {
+            combosHtml = `<div class="detail-row">
+              <span class="detail-label">Combo:</span>
+              <span class="detail-value inner-combo-list">${comboList.join('<br>')}</span>
+            </div>`;
+          }
+        }
+        
+        // Hiển thị chi tiết giá
+        const priceBreakdown = `
+          <div class="inner-price-breakdown">
+            <div class="detail-row">
+              <span class="detail-label">Tiền vé:</span>
+              <span class="detail-value">${item.totalSeatPrice.toLocaleString("vi-VN")}đ</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Tiền combo:</span>
+              <span class="detail-value">${item.totalComboPrice.toLocaleString("vi-VN")}đ</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label"><strong>Tổng cộng:</strong></span>
+              <span class="detail-value"><strong>${item.totalPrice.toLocaleString("vi-VN")}đ</strong></span>
+            </div>
+          </div>
+        `;
+
+        return `
           <div class="inner-tour-item">
             <div class="inner-actions">
               <button class="inner-delete" button-delete tour-id="${item.tourId}">
@@ -673,95 +768,37 @@ const drawCart = () => {
                   </a>
                 </div>
                 <div class="inner-meta">
-                  <div class="inner-meta-item">Ngày Khởi Hành: <b>${item.departureDateFormat}</b>
-                  </div>
-                  <div class="inner-meta-item">Khởi Hành Tại: <b>${item.locationFromName}</b>
-                  </div>
+                  <div class="inner-meta-item">Ngày Chiếu: <b>${item.departureDateFormat}</b></div>
+                  <div class="inner-meta-item">Rạp Chiếu: <b>${item.locationFromName}</b></div>
                 </div>
-              </div>
-            </div>
-            <div class="inner-quantity">
-              <label class="inner-label">Số Lượng Hành Khách</label>
-              <div class="inner-list">
-                <div class="inner-item">
-                  <div class="inner-item-label">Người lớn:</div>
-                  <div class="inner-item-input">
-                    <input 
-                      value="${item.quantityAdult}" 
-                      min="0" 
-                      type="number"
-                      input-quantity="quantityAdult"
-                      tour-id="${item.tourId}"
-                    >
-                  </div>
-                  <div class="inner-item-price">
-                    <span>${item.quantityAdult}</span>
-                    <span>x</span>
-                    <span class="inner-highlight">
-                      ${item.priceNewAdult.toLocaleString("vi-VN")}
-                    </span>
-                  </div>
-                </div>
-                <div class="inner-item">
-                  <div class="inner-item-label">Trẻ em:</div>
-                  <div class="inner-item-input">
-                    <input 
-                      value="${item.quantityChildren}" 
-                      min="0" 
-                      type="number"
-                      input-quantity="quantityChildren"
-                      tour-id="${item.tourId}"
-                    >
-                  </div>
-                  <div class="inner-item-price">
-                    <span>${item.quantityChildren}</span>
-                    <span>x</span>
-                    <span class="inner-highlight">
-                      ${item.priceNewChildren.toLocaleString("vi-VN")}
-                    </span>
-                  </div>
-                </div>
-                <div class="inner-item">
-                  <div class="inner-item-label">Em bé:</div>
-                  <div class="inner-item-input">
-                    <input 
-                      value="${item.quantityBaby}" 
-                      min="0" 
-                      type="number"
-                      input-quantity="quantityBaby"
-                      tour-id="${item.tourId}"
-                    >
-                  </div>
-                  <div class="inner-item-price">
-                    <span>${item.quantityBaby}</span>
-                    <span>x</span>
-                    <span class="inner-highlight">
-                      ${item.priceNewBaby.toLocaleString("vi-VN")}
-                    </span>
-                  </div>
+                <div class="inner-booking-details">
+                  ${seatsHtml}
+                  ${combosHtml}
+                  ${priceBreakdown}
                 </div>
               </div>
             </div>
           </div>
-        `);
+        `;
+      });
 
         const cartList = document.querySelector("[cart-list]");
         cartList.innerHTML = htmlCart.join("");
-        // Hết Hiển thị các item
 
         // Cập nhật lại giỏ hàng
         localStorage.setItem("cart", JSON.stringify(data.cart));
-        miniCart.innerHTML = data.cart.length;
-        // Hết Cập nhật lại giỏ hàng
+        updateMiniCart();
+        updateCartToServer(data.cart);
 
         // Tính tổng tiền
         const subTotalPrice = data.cart.reduce((sum, item) => {
           if(item.checked) {
-            return sum + ((item.priceNewAdult * item.quantityAdult) + (item.priceNewChildren * item.quantityChildren) + (item.priceNewBaby * item.quantityBaby));
-            } else {
+            return sum + (item.totalPrice || 0);
+          } else {
             return sum;
           }
-          }, 0);
+        }, 0);
+        
         const discount = 0;
         const totalPrice = subTotalPrice - discount;
         
@@ -770,39 +807,20 @@ const drawCart = () => {
 
         const cartTotal = document.querySelector("[cart-total]");
         cartTotal.innerHTML = totalPrice.toLocaleString("vi-VN");
-        // Hết Tính tổng tiền
-
-        // Sự kiện cập nhật số lượng
-        const listInputQuantity = document.querySelectorAll("[input-quantity]");
-        listInputQuantity.forEach(input => {
-          input.addEventListener("change", () => {
-            const tourId = input.getAttribute("tour-id");
-            const name = input.getAttribute("input-quantity");
-            const quantity = parseInt(input.value);
-
-            const cart = JSON.parse(localStorage.getItem("cart"));
-            const itemUpdate = cart.find(item => item.tourId == tourId);
-            itemUpdate[name] = quantity;
-            localStorage.setItem("cart", JSON.stringify(cart));
-            drawCart();
-          })
-        })
-        // Hết Sự kiện cập nhật số lượng
 
         // Sự kiện xóa item
         const listButtonDelete = document.querySelectorAll("[button-delete]");
         listButtonDelete.forEach(button => {
           button.addEventListener("click", () => {
             const tourId = button.getAttribute("tour-id");
-
             const cart = JSON.parse(localStorage.getItem("cart"));
             const indexItem = cart.findIndex(tour => tour.tourId == tourId);
             cart.splice(indexItem, 1);
             localStorage.setItem("cart", JSON.stringify(cart));
+            updateCartToServer(cart);
             drawCart();
           })
         })
-        // Hết Sự kiện xóa item
 
         // Sự kiện check item
         const listInputCheck = document.querySelectorAll("[input-check]");
@@ -810,18 +828,14 @@ const drawCart = () => {
           input.addEventListener("change", () => {
             const checked = input.checked;
             const tourId = input.getAttribute("tour-id");
-
             const cart = JSON.parse(localStorage.getItem("cart"));
             const itemUpdate = cart.find(item => item.tourId == tourId);
             itemUpdate.checked = checked;
             localStorage.setItem("cart", JSON.stringify(cart));
+            updateCartToServer(cart);
             drawCart();
           })
         })
-        // Hết Sự kiện check item
-
-
-
       }
     })
 }
@@ -962,13 +976,37 @@ if (userLoginForm) {
           }
 
           if (data.code == "success") {
-            alert(data.message);
-            window.location.href = "/";
+            const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const serverCart = data.cart || [];
+            
+            // Merge: ưu tiên giỏ hàng local (mới hơn)
+            const mergedCart = [...localCart];
+            serverCart.forEach(serverItem => {
+              const exists = mergedCart.find(
+                localItem => localItem.tourId === serverItem.tourId
+              );
+              if (!exists) {
+                mergedCart.push(serverItem);
+              }
+            });
+            
+            localStorage.setItem('cart', JSON.stringify(mergedCart));
+            
+            // Sync lại lên server
+            fetch('/cart/update', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ cart: mergedCart })
+            }).then(() => {
+              alert(data.message);
+              window.location.href = "/";
+            });
           }
         });
     });
 }
-
 // User Profile Form
 const userProfileForm = document.querySelector("#user-profile-form");
 if (userProfileForm) {

@@ -134,7 +134,8 @@ module.exports.loginPost = async (req, res) => {
 
   res.json({
     code: "success",
-    message: "Đăng nhập thành công!"
+    message: "Đăng nhập thành công!",
+    cart: existUser.cart || []
   });
 }
 
@@ -396,6 +397,11 @@ module.exports.resetPasswordPost = async (req, res) => {
 
 // [POST] /user/logout
 module.exports.logoutPost = async (req, res) => {
+  // Lưu giỏ hàng vào database trước khi đăng xuất
+  if (req.user) {
+    // Giỏ hàng đã được sync tự động, không cần làm gì thêm
+  }
+  
   res.clearCookie("tokenUser");
   res.json({
     code: "success",

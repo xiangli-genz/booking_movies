@@ -13,7 +13,7 @@ block main
         .inner-tour-list(cart-list)
         .inner-list-price
           .inner-item
-            .inner-label Tạm tình:
+            .inner-label Tạm tính:
             .inner-price
               span(cart-sub-total) 0
               span đ
@@ -39,12 +39,14 @@ block main
                   placeholder="Họ và tên" 
                   name="fullName" 
                   type="text"
+                  value=(user ? user.fullName : "")
                   )
               .inner-input
                 input#phone-input(
                   placeholder="Số điện thoại" 
                   name="phone" 
                   type="text"
+                  value=(user ? user.phone : "")
                   )
             textarea(
               placeholder="Ghi chú" 
@@ -81,5 +83,41 @@ block main
               .inner-text Tên tài khoản: TRINH TRUNG SON
               .inner-text STK: 0867347102
           .inner-button
-            button(type="submit") ĐẶT TOUR
+            button(type="submit") ĐẶT VÉ
   // End Section 12
+
+  style.
+    .inner-tour-item .inner-booking-details {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 5px;
+    }
+    
+    .inner-booking-details .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+    
+    .inner-booking-details .detail-label {
+      font-weight: 600;
+      color: #666;
+    }
+    
+    .inner-booking-details .detail-value {
+      color: #333;
+    }
+    
+    .inner-seat-list, .inner-combo-list {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.6;
+    }
+    
+    .inner-price-breakdown {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #ddd;
+    }

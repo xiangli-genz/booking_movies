@@ -1,5 +1,23 @@
 const mongoose = require("mongoose");
 
+const cartItemSchema = new mongoose.Schema({
+  tourId: String,
+  locationFrom: String,
+  seats: [String], // Mảng các ghế đã chọn
+  combos: {
+    popcorn: { quantity: Number, price: Number, name: String },
+    coke: { quantity: Number, price: Number, name: String },
+    hotdog: { quantity: Number, price: Number, name: String },
+    water: { quantity: Number, price: Number, name: String },
+    comboset: { quantity: Number, price: Number, name: String }
+  },
+  checked: Boolean,
+  addedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const schema = new mongoose.Schema(
   {
     fullName: String,
@@ -8,6 +26,7 @@ const schema = new mongoose.Schema(
     password: String,
     avatar: String,
     address: String,
+    cart: [cartItemSchema],
     status: {
       type: String,
       default: "active"
