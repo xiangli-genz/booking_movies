@@ -2,8 +2,8 @@ const router = require("express").Router();
 const accountRoutes = require("./account.route");
 const dashboardRoutes = require("./dashboard.route");
 const categoryRoutes = require("./category.route");
-const tourRoutes = require("./tour.route");
-const orderRoutes = require("./order.route");
+const movieRoutes = require("./movie.route");
+const bookingRoutes = require("./booking.route");
 const userRoutes = require("./user.route");
 const contactRoutes = require("./contact.route");
 const settingRoutes = require("./setting.route");
@@ -18,15 +18,15 @@ router.use((req, res, next) => {
 })
 
 router.use("/account", accountRoutes);
-router.use("/dashboard",authMiddleware.verifyToken, dashboardRoutes);
-router.use("/category",authMiddleware.verifyToken, categoryRoutes);
-router.use("/tour",authMiddleware.verifyToken, tourRoutes);
-router.use("/order",authMiddleware.verifyToken, orderRoutes);
-router.use("/user",authMiddleware.verifyToken, userRoutes);
-router.use("/contact",authMiddleware.verifyToken, contactRoutes);
-router.use("/setting",authMiddleware.verifyToken, settingRoutes);
-router.use("/profile",authMiddleware.verifyToken, profileRoutes);
-router.use('/upload', authMiddleware.verifyToken, uploadRoutes)
+router.use("/dashboard", authMiddleware.verifyToken, dashboardRoutes);
+router.use("/category", authMiddleware.verifyToken, categoryRoutes);
+router.use("/movie", authMiddleware.verifyToken, movieRoutes);
+router.use("/booking", authMiddleware.verifyToken, bookingRoutes);
+router.use("/user", authMiddleware.verifyToken, userRoutes);
+router.use("/contact", authMiddleware.verifyToken, contactRoutes);
+router.use("/setting", authMiddleware.verifyToken, settingRoutes);
+router.use("/profile", authMiddleware.verifyToken, profileRoutes);
+router.use('/upload', authMiddleware.verifyToken, uploadRoutes);
 
 router.get("*", authMiddleware.verifyToken, (req, res) => {
   res.render("admin/pages/error-404", {

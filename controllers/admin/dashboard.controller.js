@@ -1,101 +1,102 @@
 const AccountAdmin = require("../../models/account-admin.model");
-const Order = require("../../models/order.model");
+const Booking = require("../../models/booking.model");
+const User = require("../../models/user.model");
 const variableConfig = require("../../config/variable");
 
 module.exports.dashboard = async (req, res) => {
-  // Section 1
+  // Section 1 - Overview
   const overview = {
     totalAdmin: 0,
     totalUser: 0,
-    totalOrder: 0,
-    totalPrice: 0
+    totalBooking: 0,
+    totalRevenue: 0
   };
 
   overview.totalAdmin = await AccountAdmin.countDocuments({ deleted: false });
+  overview.totalUser = await User.countDocuments({ deleted: false });
 
-  const orderList = await Order.find({ deleted: false });
-  overview.totalOrder = orderList.length;
-  overview.totalPrice = orderList.reduce((sum, item) => sum + item.total, 0);
-  // End Section 1
+  const bookingList = await Booking.find({ deleted: false });
+  overview.totalBooking = bookingList.length;
+  overview.totalRevenue = bookingList.reduce((sum, item) => sum + item.total, 0);
 
-  const orders = await Order.find({ deleted: false }).sort({ createdAt: -1 }).limit(3);
+  // Recent bookings
+  const bookings = await Booking
+    .find({ deleted: false })
+    .sort({ createdAt: -1 })
+    .limit(5);
 
-  for (const order of orders) {
-    const pm = variableConfig.paymentMethod.find(item => item.value == order.paymentMethod);
-    order.paymentMethodName = pm ? pm.label : (order.paymentMethod || "--");
+  for (const booking of bookings) {
+    booking.paymentMethodName = {
+      money: "Tiền mặt",
+      zalopay: "ZaloPay",
+      bank: "Chuyển khoản",
+      momo: "Momo"
+    }[booking.paymentMethod] || booking.paymentMethod;
 
-    const ps = variableConfig.paymentStatus.find(item => item.value == order.paymentStatus);
-    order.paymentStatusName = ps ? ps.label : (order.paymentStatus || "--");
+    booking.paymentStatusName = booking.paymentStatus === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
 
-    order.subTotal = 0;
-    if (order.items && Array.isArray(order.items)) {
-      for (const item of order.items) {
-        if (item.adult) {
-          item.adultPrice = item.priceNewAdult || item.priceAdult || 0;
-          item.adultTotal = item.adult * item.adultPrice;
-          order.subTotal += item.adultTotal;
-        }
-        if (item.child) {
-          item.childPrice = item.priceNewChildren || item.priceChildren || 0;
-          item.childTotal = item.child * item.childPrice;
-          order.subTotal += item.childTotal;
-        }
-        if (item.baby) {
-          item.babyPrice = item.priceNewBaby || item.priceBaby || 0;
-          item.babyTotal = item.baby * item.babyPrice;
-          order.subTotal += item.babyTotal;
-        }
-      }
-    }
+    booking.statusName = {
+      initial: "Đang xử lý",
+      confirmed: "Đã xác nhận",
+      cancelled: "Đã hủy",
+      completed: "Hoàn thành"
+    }[booking.status] || booking.status;
+
+    // Format seat list
+    booking.seatList = booking.seats.map(s => s.seatNumber).join(", ");
     
-    order.subTotal = order.subTotal || 0;
-    order.discount = order.discount || 0;
-    order.total = (order.total || order.subTotal) - order.discount;
+    // Format combo list
+    if(booking.combos && booking.combos.length > 0) {
+      booking.comboList = booking.combos.map(c => `${c.name} x${c.quantity}`).join(", ");
+    } else {
+      booking.comboList = "Không có";
+    }
   }
 
   res.render("admin/pages/dashboard", {
     pageTitle: "Tổng quan",
     overview: overview,
-    orders: orders
+    bookings: bookings
   });
 }
+
 module.exports.revenueChartPost = async (req, res) => {
   const { currentMonth, currentYear, previousMonth, previousYear, arrayDay } = req.body;
 
-  const ordersCurrentMonth = await Order.find({
+  const bookingsCurrentMonth = await Booking.find({
     deleted: false,
     createdAt: {
       $gte: new Date(currentYear, currentMonth - 1, 1),
       $lt: new Date(currentYear, currentMonth, 1)
     }
-  })
+  });
 
-  const ordersPreviousMonth = await Order.find({
+  const bookingsPreviousMonth = await Booking.find({
     deleted: false,
     createdAt: {
       $gte: new Date(previousYear, previousMonth - 1, 1),
       $lt: new Date(previousYear, previousMonth, 1)
     }
-  })
+  });
 
   const dataMonthCurrent = [];
   const dataMonthPrevious = [];
 
   for (const day of arrayDay) {
     let totalCurrent = 0;
-    for (const order of ordersCurrentMonth) {
-      const orderDate = new Date(order.createdAt).getDate();
-      if(day == orderDate) {
-        totalCurrent += order.total;
+    for (const booking of bookingsCurrentMonth) {
+      const bookingDate = new Date(booking.createdAt).getDate();
+      if(day == bookingDate) {
+        totalCurrent += booking.total;
       }
     }
     dataMonthCurrent.push(totalCurrent);
 
     let totalPrevious = 0;
-    for (const order of ordersPreviousMonth) {
-      const orderDate = new Date(order.createdAt).getDate();
-      if(day == orderDate) {
-        totalPrevious += order.total;
+    for (const booking of bookingsPreviousMonth) {
+      const bookingDate = new Date(booking.createdAt).getDate();
+      if(day == bookingDate) {
+        totalPrevious += booking.total;
       }
     }
     dataMonthPrevious.push(totalPrevious);
