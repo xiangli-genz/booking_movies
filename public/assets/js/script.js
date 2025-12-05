@@ -912,15 +912,6 @@ if(boxMovieDetail) {
   }
 }
 // End Box Movie Detail
-    } else {
-      cart.push(cartItem);
-    }
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-    updateCartToServer(cart);
-    window.location.href = "/cart";
-  })
-}
 // End Box Movie Detail
 // User Register Form
 const userRegisterForm = document.querySelector("#user-register-form");

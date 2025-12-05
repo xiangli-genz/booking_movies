@@ -3,7 +3,6 @@ const Category = require("../../models/category.model");
 const Cinema = require("../../models/cinema.model");
 const Movie = require("../../models/movie.model");
 const AccountAdmin = require("../../models/account-admin.model");
-
 const categoryHelper = require("../../helpers/category.helper");
 const { default: slugify } = require("slugify");
 
@@ -44,6 +43,8 @@ module.exports.list = async (req, res) => {
     find.slug = keywordRegex;
   }
 
+  // Pagination
+
   const movieList = await Movie
     .find(find)
     .sort({
@@ -67,6 +68,12 @@ module.exports.list = async (req, res) => {
 
     item.createdAtFormat = moment(item.createdAt).format("HH:mm - DD/MM/YYYY");
     item.updatedAtFormat = moment(item.updatedAt).format("HH:mm - DD/MM/YYYY");
+    // FORMAT NGÀY CÔNG CHIẾU - ĐÂY LÀ PHẦN QUAN TRỌNG
+    if(item.releaseDate) {
+      item.releaseDateFormat = moment(item.releaseDate).format("DD/MM/YYYY");
+    } else {
+      item.releaseDateFormat = "--";
+    }
   }
 
   const accountAdminList = await AccountAdmin
@@ -76,7 +83,7 @@ module.exports.list = async (req, res) => {
   res.render("admin/pages/movie-list", {
     pageTitle: "Quản lý phim",
     movieList: movieList,
-    accountAdminList: accountAdminList
+    accountAdminList: accountAdminList,
   })
 }
 
@@ -122,7 +129,7 @@ module.exports.createPost = async (req, res) => {
     // Xử lý ngày phát hành
     req.body.releaseDate = req.body.releaseDate ? new Date(req.body.releaseDate) : null;
 
-    // Xử lý lịch chiếu - parse nếu là string, bỏ qua nếu là array
+    // Xử lý lịch chiếu
     if(req.body.showtimes) {
       if(typeof req.body.showtimes === 'string') {
         try {
@@ -209,8 +216,8 @@ module.exports.editPatch = async (req, res) => {
 
     req.body.updatedBy = req.account.id;
     
-    if(req.files && req.files.avatar) {
-      req.body.avatar = req.files.avatar[0].path;
+    if(req.files) {
+      req.body.avatar = req.files.avatar.path;
     } else {
       delete req.body.avatar;
     }
@@ -223,7 +230,19 @@ module.exports.editPatch = async (req, res) => {
     };
 
     req.body.releaseDate = req.body.releaseDate ? new Date(req.body.releaseDate) : null;
-    req.body.showtimes = req.body.showtimes ? JSON.parse(req.body.showtimes) : [];
+    
+    // Xử lý lịch chiếu
+    if(req.body.showtimes) {
+      if(typeof req.body.showtimes === 'string') {
+        try {
+          req.body.showtimes = JSON.parse(req.body.showtimes);
+        } catch (e) {
+          req.body.showtimes = [];
+        }
+      }
+    } else {
+      req.body.showtimes = [];
+    }
 
     if(req.files && req.files.images && req.files.images.length > 0) {
       req.body.images = req.files.images.map(file => file.path);

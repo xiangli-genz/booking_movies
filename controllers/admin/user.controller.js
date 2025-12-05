@@ -38,6 +38,15 @@ module.exports.list = async (req, res) => {
     ];
   }
 
+  // PHÂN TRANG
+  const limit = 10; // Số bản ghi trên mỗi trang
+  const page = parseInt(req.query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  // Đếm tổng số bản ghi
+  const totalRecords = await User.countDocuments(find);
+  const totalPages = Math.ceil(totalRecords / limit);
+
   const userList = await User
     .find(find)
     .sort({
@@ -50,7 +59,13 @@ module.exports.list = async (req, res) => {
 
   res.render("admin/pages/user-list", {
     pageTitle: "Quản lý người dùng",
-    userList: userList
+    userList: userList,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalRecords: totalRecords,
+      limit: limit
+    }
   });
 }
 
