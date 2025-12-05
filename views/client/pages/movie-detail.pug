@@ -2,124 +2,410 @@ extends ../layouts/default.pug
 include ../mixins/box-breadcrumb.pug
 
 block main
-    +box-breadcrumb(breadcrumb)
-    // End Breadcrumb
-    
-    // Section 10
-    .section-10
-      .container
-        .inner-wrap
-          .inner-left
-            .box-images
-              .inner-images-main
-                .swiper.swiper-box-images-main
-                  .swiper-wrapper
+  +box-breadcrumb(breadcrumb)
+  
+  .section-10
+    .container
+      .inner-wrap
+        .inner-left
+          .box-images
+            .inner-images-main
+              .swiper.swiper-box-images-main
+                .swiper-wrapper
+                  if movieDetail.images && movieDetail.images.length > 0
                     each image in movieDetail.images
                       .swiper-slide
                         .inner-image
-                          img(
-                            alt="" 
-                            src=image
-                            )
+                          img(alt=movieDetail.name src=image)
+                  else
+                    .swiper-slide
+                      .inner-image
+                        img(alt=movieDetail.name src=movieDetail.avatar)
+            
+            if movieDetail.images && movieDetail.images.length > 1
               .inner-images-thumb
                 .swiper.swiper-box-images-thumb
                   .swiper-wrapper
                     each image in movieDetail.images
                       .swiper-slide
                         .inner-image
-                          img(
-                            alt="" 
-                            src=image
-                            )
-            .box-movie-info
-              .inner-title Thông Tin movie
-              .inner-content !{movieDetail.information}
-              .inner-read-more
-                button.button-outline Xem tất cả
+                          img(alt="" src=image)
+          
+          .box-tour-info
+            .inner-title Thông Tin Phim
+            .inner-content
+              if movieDetail.description
+                != movieDetail.description
+              else
+                p Chưa có mô tả chi tiết
+            .inner-read-more
+              button.button-outline Xem tất cả
+        
+        .inner-right
+          .box-tour-detail
+            .inner-title-main Chi Tiết Đặt Vé
             
-          .inner-right
-            .box-movie-detail
-              .inner-title-main Chuyến Đi Của Bạn
-              .inner-product
-                .inner-image
-                  img(
-                    alt="" 
-                    src=movieDetail.avatar
-                    )
-                .inner-info
-                  .inner-title #{movieDetail.name}
-              .inner-meta
-                
-                //- i.fa-solid.fa-ticket-simple
-                //- span Mã movie:
-                //- span.inner-highlight 28T00001
-
-                .inner-item
-                  i.fa-solid.fa-calendar-days
-                  span Thời Gian:
-                  span.inner-highlight #{movieDetail.time}
-                .inner-item
-                  i.fa-solid.fa-truck-plane
-                  span Phương Tiện:
-                  span.inner-highlight #{movieDetail.vehicle}
-                .inner-item
-                  i.fa-solid.fa-calendar-days
-                  span Ngày Khởi Hành:
-                  span.inner-highlight #{movieDetail.departureDateFormat}
+            .inner-product
+              .inner-image
+                img(alt=movieDetail.name src=movieDetail.avatar)
+              .inner-info
+                .inner-title #{movieDetail.name}
+                .inner-rating
+                  .inner-stars
+                    i.fa-solid.fa-star
+                    i.fa-solid.fa-star
+                    i.fa-solid.fa-star
+                    i.fa-solid.fa-star
+                    i.fa-solid.fa-star-half-stroke
+                  .inner-number (4.5/5)
+            
+            .inner-meta
+              .inner-item
+                i.fa-solid.fa-clock
+                span Thời lượng:
+                span.inner-highlight #{movieDetail.duration || "N/A"}
               
-              .inner-quantity
-                label.inner-label Số Lượng Hành Khách
-                .inner-list
-                  .inner-item
-                    .inner-item-label Người lớn:
-                    .inner-item-input
-                      input(
-                        value="1" 
-                        min="0" 
-                        max=movieDetail.stockAdult
+              .inner-item
+                i.fa-solid.fa-user-tie
+                span Đạo diễn:
+                span.inner-highlight #{movieDetail.director || "N/A"}
+              
+              .inner-item
+                i.fa-solid.fa-users
+                span Diễn viên:
+                span.inner-highlight #{movieDetail.cast || "N/A"}
+              
+              .inner-item
+                i.fa-solid.fa-language
+                span Ngôn ngữ:
+                span.inner-highlight #{movieDetail.language || "N/A"}
+              
+              .inner-item
+                i.fa-solid.fa-calendar-days
+                span Ngày công chiếu:
+                span.inner-highlight #{movieDetail.releaseDateFormat}
+              
+              .inner-item
+                i.fa-solid.fa-child
+                span Độ tuổi:
+                span.inner-highlight #{movieDetail.ageRating || "P"}
+            
+            if movieDetail.trailer
+              .inner-section
+                .inner-section-title
+                  i.fa-brands.fa-youtube
+                  | Trailer
+                iframe(
+                  width="100%"
+                  height="250"
+                  src=movieDetail.trailer.replace('watch?v=', 'embed/')
+                  frameborder="0"
+                  allowfullscreen
+                  style="border-radius: 8px;"
+                )
+            
+            .inner-form
+              label.inner-label
+                i.fa-solid.fa-building
+                | Chọn rạp chiếu
+              select(location-from name="cinema")
+                option(value="") -- Chọn rạp --
+                if movieDetail.showtimes && movieDetail.showtimes.length > 0
+                  each showtime in movieDetail.showtimes
+                    option(value=showtime.cinema) #{showtime.cinema}
+            
+            .inner-form
+              label.inner-label
+                i.fa-solid.fa-calendar-days
+                | Chọn ngày chiếu
+              select(name="showtimeDate")
+                option(value="") -- Chọn ngày --
+                if movieDetail.showtimes && movieDetail.showtimes.length > 0
+                  each showtime in movieDetail.showtimes
+                    option(
+                      value=showtime.date
+                      data-cinema=showtime.cinema
+                    ) #{showtime.dateFormat} - #{showtime.dayOfWeek}
+            
+            .inner-form
+              label.inner-label
+                i.fa-solid.fa-clock
+                | Chọn suất chiếu
+              select(name="showtimeTime")
+                option(value="") -- Chọn giờ --
+            
+            .inner-form
+              label.inner-label
+                i.fa-solid.fa-film
+                | Định dạng
+              select(name="showtimeFormat")
+                option(value="") -- Chọn định dạng --
+            
+            .inner-section
+              .inner-section-title
+                i.fa-solid.fa-couch
+                | Chọn ghế ngồi
+              .seat-display Chưa chọn ghế
+              .seat-grid
+                - const rows = movieDetail.seatMap ? movieDetail.seatMap.rows : 10
+                - const cols = movieDetail.seatMap ? movieDetail.seatMap.columns : 12
+                - const vipRows = movieDetail.seatMap ? movieDetail.seatMap.vipRows : ['V1', 'V2']
+                - const coupleRows = movieDetail.seatMap ? movieDetail.seatMap.coupleRows : ['C1']
+                
+                .seat-row(style="justify-content: center; margin-bottom: 15px;")
+                  .seat(style="background: #ddd; cursor: default; border-color: #ddd;") Màn hình
+                
+                each val, rowIndex in Array(rows)
+                  - const rowLabel = String.fromCharCode(65 + rowIndex)
+                  .seat-row
+                    each val2, colIndex in Array(cols)
+                      - const seatNumber = rowLabel + (colIndex + 1)
+                      - let seatType = 'standard'
+                      - if (vipRows.includes('V' + (rowIndex + 1))) seatType = 'vip'
+                      - if (coupleRows.includes('C' + (rowIndex + 1))) seatType = 'couple'
+                      
+                      .seat(
+                        class=`seat-${seatType}`
+                        data-seat=seatNumber
+                        data-type=seatType
+                        data-price=(seatType === 'vip' ? movieDetail.prices.vip : (seatType === 'couple' ? movieDetail.prices.couple : movieDetail.prices.standard))
+                      ) #{seatNumber}
+            
+            .inner-section
+              .inner-section-title
+                i.fa-solid.fa-popcorn
+                | Combo bắp nước
+              .combo-display Chưa chọn combo
+              .combo-list
+                - const combos = [{id: 'popcorn', name: 'Bắp Rang Bơ', price: 45000}, {id: 'coke', name: 'Nước Ngọt', price: 35000}, {id: 'hotdog', name: 'Hotdog', price: 30000}, {id: 'water', name: 'Nước Suối', price: 15000}, {id: 'comboset', name: 'Combo Set', price: 95000}]
+                each combo in combos
+                  .combo-item
+                    .combo-name #{combo.name}
+                    .combo-price #{combo.price.toLocaleString('vi-VN')}đ
+                    .combo-control
+                      button.btn-minus(type="button" data-combo=combo.id) -
+                      input.combo-input(
                         type="number"
-                        input-stock-adult
-                        price=movieDetail.priceNewAdult
-                        )
-                    .inner-item-price
-                      span(stock-adult) 1
-                      span x
-                      span.inner-highlight #{movieDetail.priceNewAdult.toLocaleString("vi-VN")}
-                  .inner-item
-                    .inner-item-label Trẻ em:
-                    .inner-item-input
-                      input(
-                        value="0" 
-                        min="0" 
-                        max=movieDetail.stockChildren
-                        type="number"
-                        input-stock-children
-                      price=movieDetail.priceNewChildren
-                        )
-                    .inner-item-price
-                      span(stock-children) 0
-                      span x
-                      span.inner-highlight #{movieDetail.priceNewChildren.toLocaleString("vi-VN")}
-                  .inner-item
-                    .inner-item-label Em bé:
-                    .inner-item-input
-                      input(
-                        value="0" 
-                        min="0" 
-                        max=movieDetail.stockBaby
-                        type="number"
-                        input-stock-baby
-                      price=movieDetail.priceNewBaby
-                        )
-                    .inner-item-price
-                      span(stock-baby) 0
-                      span x
-                      span.inner-highlight #{movieDetail.priceNewBaby.toLocaleString("vi-VN")}
-              .inner-total
-                .inner-total-label Tổng cộng:
-                .inner-total-price
-                  span(total-price) #{movieDetail.priceNewAdult.toLocaleString("vi-VN")}
-                  span đ
-              button.inner-button-add-cart(movie-id=movieDetail.id) Thêm Vào Giỏ Hàng
+                        value="0"
+                        min="0"
+                        readonly
+                        data-combo-input=combo.id
+                        data-combo-price=combo.price
+                        data-combo-name=combo.name
+                      )
+                      button.btn-plus(type="button" data-combo=combo.id) +
+            
+            .price-display
+              span Tiền vé:
+              span.seat-total 0đ
+            .price-display
+              span Tiền combo:
+              span.combo-total 0đ
+            .total-display
+              | Tổng cộng: 
+              span.grand-total 0đ
+            
+            button.inner-button-add-cart(tour-id=movieDetail.id) Đặt Vé Ngay
 
-    // End Section 10
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const movieId = '#{movieDetail.id}';
+      const cinemaSelect = document.querySelector('[name="cinema"]');
+      const dateSelect = document.querySelector('[name="showtimeDate"]');
+      const timeSelect = document.querySelector('[name="showtimeTime"]');
+      const formatSelect = document.querySelector('[name="showtimeFormat"]');
+      
+      const showtimes = !{JSON.stringify(movieDetail.showtimes || [])};
+      const prices = !{JSON.stringify(movieDetail.prices || {standard: 50000, vip: 60000, couple: 110000})};
+      
+      let selectedSeats = [];
+      let bookedSeats = [];
+      
+      // Load booked seats when cinema/date/time selected
+      async function loadBookedSeats() {
+        const cinema = cinemaSelect.value;
+        const date = dateSelect.value;
+        const time = timeSelect.value;
+        
+        if (cinema && date && time) {
+          try {
+            const response = await fetch(`/booking/booked-seats?movieId=${movieId}&cinema=${encodeURIComponent(cinema)}&date=${date}&time=${encodeURIComponent(time)}`);
+            const data = await response.json();
+            if (data.code === 'success') {
+              bookedSeats = data.bookedSeats || [];
+              updateSeatDisplay();
+            }
+          } catch (error) {
+            console.error('Error loading booked seats:', error);
+          }
+        }
+      }
+      
+      // Update seat display
+      function updateSeatDisplay() {
+        const seats = document.querySelectorAll('.seat:not([style*="background: #ddd"])');
+        seats.forEach(seat => {
+          const seatNumber = seat.getAttribute('data-seat');
+          seat.classList.remove('seat-selected', 'seat-booked');
+          
+          if (bookedSeats.includes(seatNumber)) {
+            seat.classList.add('seat-booked');
+            seat.style.cursor = 'not-allowed';
+          } else if (selectedSeats.includes(seatNumber)) {
+            seat.classList.add('seat-selected');
+          } else {
+            seat.style.cursor = 'pointer';
+          }
+        });
+        
+        updateDisplay();
+      }
+      
+      // Cinema change
+      if (cinemaSelect) {
+        cinemaSelect.addEventListener('change', function() {
+          const cinema = this.value;
+          dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>';
+          timeSelect.innerHTML = '<option value="">-- Chọn giờ --</option>';
+          formatSelect.innerHTML = '<option value="">-- Chọn định dạng --</option>';
+          
+          if (cinema) {
+            const dates = showtimes.filter(s => s.cinema === cinema);
+            dates.forEach(showtime => {
+              const date = new Date(showtime.date);
+              const dateStr = date.toISOString().split('T')[0];
+              const dateFormat = date.toLocaleDateString('vi-VN');
+              const dayOfWeek = date.toLocaleDateString('vi-VN', {weekday: 'long'});
+              const option = document.createElement('option');
+              option.value = dateStr;
+              option.setAttribute('data-cinema', cinema);
+              option.textContent = `${dateFormat} - ${dayOfWeek}`;
+              dateSelect.appendChild(option);
+            });
+          }
+          selectedSeats = [];
+          updateSeatDisplay();
+        });
+      }
+      
+      // Date change
+      if (dateSelect) {
+        dateSelect.addEventListener('change', function() {
+          const cinema = cinemaSelect.value;
+          const date = this.value;
+          timeSelect.innerHTML = '<option value="">-- Chọn giờ --</option>';
+          formatSelect.innerHTML = '<option value="">-- Chọn định dạng --</option>';
+          
+          if (cinema && date) {
+            const showtime = showtimes.find(s => s.cinema === cinema && new Date(s.date).toISOString().split('T')[0] === date);
+            if (showtime && showtime.times) {
+              showtime.times.forEach(time => {
+                const option = document.createElement('option');
+                option.value = time;
+                option.textContent = time;
+                timeSelect.appendChild(option);
+              });
+              
+              if (showtime.format) {
+                const formatOption = document.createElement('option');
+                formatOption.value = showtime.format;
+                formatOption.textContent = showtime.format;
+                formatOption.selected = true;
+                formatSelect.appendChild(formatOption);
+              }
+            }
+          }
+          selectedSeats = [];
+          updateSeatDisplay();
+        });
+      }
+      
+      // Time change - load booked seats
+      if (timeSelect) {
+        timeSelect.addEventListener('change', function() {
+          loadBookedSeats();
+        });
+      }
+      
+      // Seat selection
+      document.querySelectorAll('.seat:not([style*="background: #ddd"])').forEach(seat => {
+        seat.addEventListener('click', function() {
+          if (this.classList.contains('seat-booked')) return;
+          
+          const seatNumber = this.getAttribute('data-seat');
+          const index = selectedSeats.indexOf(seatNumber);
+          
+          if (index > -1) {
+            selectedSeats.splice(index, 1);
+          } else {
+            selectedSeats.push(seatNumber);
+          }
+          
+          updateSeatDisplay();
+        });
+      });
+      
+      // Combo controls
+      document.querySelectorAll('.btn-plus, .btn-minus').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const comboId = this.getAttribute('data-combo');
+          const input = document.querySelector(`[data-combo-input="${comboId}"]`);
+          let value = parseInt(input.value) || 0;
+          
+          if (this.classList.contains('btn-plus')) {
+            value++;
+          } else if (this.classList.contains('btn-minus') && value > 0) {
+            value--;
+          }
+          
+          input.value = value;
+          updateDisplay();
+        });
+      });
+      
+      function updateDisplay() {
+        // Update seat display text
+        const seatDisplay = document.querySelector('.seat-display');
+        if (selectedSeats.length > 0) {
+          seatDisplay.textContent = selectedSeats.join(', ');
+        } else {
+          seatDisplay.textContent = 'Chưa chọn ghế';
+        }
+        
+        // Calculate seat total
+        let seatTotal = 0;
+        selectedSeats.forEach(seatNumber => {
+          const seatEl = document.querySelector(`[data-seat="${seatNumber}"]`);
+          if (seatEl) {
+            const price = parseInt(seatEl.getAttribute('data-price')) || 0;
+            seatTotal += price;
+          }
+        });
+        
+        // Calculate combo total
+        let comboTotal = 0;
+        const comboList = [];
+        document.querySelectorAll('[data-combo-input]').forEach(input => {
+          const qty = parseInt(input.value) || 0;
+          if (qty > 0) {
+            const price = parseInt(input.getAttribute('data-combo-price')) || 0;
+            const name = input.getAttribute('data-combo-name') || '';
+            comboTotal += qty * price;
+            comboList.push(`${name} x${qty}`);
+          }
+        });
+        
+        // Update combo display text
+        const comboDisplay = document.querySelector('.combo-display');
+        if (comboList.length > 0) {
+          comboDisplay.textContent = comboList.join(', ');
+        } else {
+          comboDisplay.textContent = 'Chưa chọn combo';
+        }
+        
+        // Update totals
+        document.querySelector('.seat-total').textContent = seatTotal.toLocaleString('vi-VN') + 'đ';
+        document.querySelector('.combo-total').textContent = comboTotal.toLocaleString('vi-VN') + 'đ';
+        document.querySelector('.grand-total').textContent = (seatTotal + comboTotal).toLocaleString('vi-VN') + 'đ';
+      }
+    });

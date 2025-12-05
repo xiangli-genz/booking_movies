@@ -1,8 +1,11 @@
 mixin product-item(item)
-  - const price = item.priceAdult || (item.prices && item.prices.standard) || 0;
-  - const priceNew = item.priceNewAdult || 0;
-  - const discount = (price > 0) ? parseInt(((price - priceNew) / price) * 100) : 0;
-  - const displayDate = item.departureDateFormat || item.releaseDateFormat || "";
+  - const standardPrice = (item.prices && item.prices.standard) || 50000;
+  - const vipPrice = (item.prices && item.prices.vip) || 60000;
+  - const couplePrice = (item.prices && item.prices.couple) || 110000;
+  - const displayPrice = standardPrice;
+  - const discount = 0; // Calculate if you have old price
+  - const displayDate = item.releaseDateFormat || "";
+  - const availableSeats = item.seatMap ? (item.seatMap.rows * item.seatMap.columns) - (item.seatMap.bookedSeats ? item.seatMap.bookedSeats.length : 0) : 0;
 
   .product-item
     .inner-image
@@ -11,29 +14,67 @@ mixin product-item(item)
           alt=item.name
           src=item.avatar
         )
-    .inner-discount
-      i.fa-solid.fa-bolt
-      | Giảm -#{discount > 0 ? discount : 0}%
+    
+    if discount > 0
+      .inner-discount
+        i.fa-solid.fa-bolt
+        | Giảm -#{discount}%
+    
     .inner-content
       h3.inner-title
         a(href=`/movie/detail/${item.slug}`) #{item.name}
+      
       .inner-prices
-        if(discount > 0)
-        .inner-price-old
-            | #{(price || 0).toLocaleString("vi-VN")}
-            span.inner-unit đ
         .inner-price-new
-          | #{(priceNew || price || 0).toLocaleString("vi-VN")}
+          | #{displayPrice.toLocaleString("vi-VN")}
           span.inner-unit đ
+          |  - 
+          | #{couplePrice.toLocaleString("vi-VN")}
+          span.inner-unit đ
+      
       .inner-desc
-        .inner-desc-item
-          | Ngày Chiếu:
-          b #{displayDate}
-        .inner-desc-item
-          | Thời Gian:
-          b #{item.time || item.duration || "N/A"}
-          b #{item.time}
+        if displayDate
+          .inner-desc-item
+            i.fa-solid.fa-calendar-days(style="margin-right: 5px;")
+            | Ngày chiếu:
+            b #{displayDate}
+        
+        if item.duration
+          .inner-desc-item
+            i.fa-solid.fa-clock(style="margin-right: 5px;")
+            | Thời lượng:
+            b #{item.duration}
+        
+        if item.ageRating
+          .inner-desc-item
+            i.fa-solid.fa-child(style="margin-right: 5px;")
+            | Độ tuổi:
+            b #{item.ageRating}
+        
+        if item.showtimes && item.showtimes.length > 0
+          .inner-desc-item
+            i.fa-solid.fa-film(style="margin-right: 5px;")
+            | Định dạng:
+            each showtime, index in item.showtimes.slice(0, 2)
+              if index > 0
+                | , 
+              b #{showtime.format}
+      
       .inner-meta
-        .inner-stock
-          .inner-label Số chỗ còn:
-          .inner-number #{item.stockAdult + item.stockChildren + item.stockBaby}
+        .inner-rating
+          .inner-stars
+            i.fa-solid.fa-star
+            i.fa-solid.fa-star
+            i.fa-solid.fa-star
+            i.fa-solid.fa-star
+            i.fa-solid.fa-star-half-stroke
+          .inner-number (4.5/5)
+        
+        if availableSeats > 0
+          .inner-stock
+            .inner-label Còn chỗ:
+            .inner-number #{availableSeats}
+        else
+          .inner-stock
+            .inner-label Còn chỗ:
+            .inner-number ∞
