@@ -1,0 +1,119 @@
+extends ../layouts/default.pug
+
+block main
+  .container
+    .section-11(style="padding-top: 60px; padding-bottom: 60px;")
+      .inner-wrap
+        .inner-head(style="text-align: center; margin-bottom: 30px;")
+          i.fa-solid.fa-circle-check(style="font-size: 60px; color: #00B69B; margin-bottom: 15px;")
+          h2.inner-title(style="color: var(--color-primary); margin-bottom: 10px;") Đặt Vé Thành Công!
+          p(style="color: #666;") Cảm ơn bạn đã đặt vé. Chúng tôi sẽ liên hệ với bạn sớm nhất.
+        
+        .inner-tour-item(style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; margin-bottom: 20px;")
+          h3(style="margin-top: 0; color: var(--color-primary);") Thông Tin Đặt Vé
+          .inner-product
+            .inner-image
+              img(src=bookingDetail.movieAvatar alt=bookingDetail.movieName)
+            .inner-content
+              .inner-title
+                strong #{bookingDetail.movieName}
+              .inner-meta
+                .inner-meta-item
+                  i.fa-solid.fa-ticket(style="margin-right: 5px;")
+                  | Mã đặt vé: 
+                  strong #{bookingDetail.bookingCode}
+                .inner-meta-item
+                  i.fa-solid.fa-building(style="margin-right: 5px;")
+                  | Rạp: 
+                  strong #{bookingDetail.cinema}
+                .inner-meta-item
+                  i.fa-regular.fa-calendar(style="margin-right: 5px;")
+                  | Ngày chiếu: 
+                  strong #{bookingDetail.showtimeDateFormat}
+                .inner-meta-item
+                  i.fa-regular.fa-clock(style="margin-right: 5px;")
+                  | Giờ chiếu: 
+                  strong #{bookingDetail.showtime.time}
+                .inner-meta-item
+                  i.fa-solid.fa-film(style="margin-right: 5px;")
+                  | Định dạng: 
+                  strong #{bookingDetail.showtime.format}
+        
+        .inner-tour-item(style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; margin-bottom: 20px;")
+          h3(style="margin-top: 0; color: var(--color-primary);") Thông Tin Khách Hàng
+          .inner-meta
+            .inner-meta-item
+              i.fa-solid.fa-user(style="margin-right: 5px;")
+              | Họ tên: 
+              strong #{bookingDetail.fullName}
+            .inner-meta-item
+              i.fa-solid.fa-phone(style="margin-right: 5px;")
+              | Số điện thoại: 
+              strong #{bookingDetail.phone}
+            if bookingDetail.email
+              .inner-meta-item
+                i.fa-solid.fa-envelope(style="margin-right: 5px;")
+                | Email: 
+                strong #{bookingDetail.email}
+            if bookingDetail.note
+              .inner-meta-item
+                i.fa-solid.fa-note-sticky(style="margin-right: 5px;")
+                | Ghi chú: 
+                strong #{bookingDetail.note}
+        
+        .inner-tour-item(style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; margin-bottom: 20px;")
+          h3(style="margin-top: 0; color: var(--color-primary);") Chi Tiết Vé
+          .inner-quantity
+            .inner-list
+              .inner-item
+                .inner-item-label Ghế đã chọn:
+                .inner-item-price
+                  each seat in bookingDetail.seats
+                    div #{seat.seatNumber} (#{seat.type === 'standard' ? 'Thường' : seat.type === 'vip' ? 'VIP' : 'Đôi'}): #{(seat.price || 0).toLocaleString('vi-VN')}đ
+              
+              if bookingDetail.combos && bookingDetail.combos.length > 0
+                .inner-item
+                  .inner-item-label Combo đã chọn:
+                  .inner-item-price
+                    each combo in bookingDetail.combos
+                      div #{combo.name} x#{combo.quantity}: #{(combo.totalPrice || 0).toLocaleString('vi-VN')}đ
+        
+        .inner-list-price(style="background: #f5f5f5; padding: 20px; border-radius: 10px;")
+          .inner-item
+            .inner-label Tiền vé:
+            .inner-price #{(bookingDetail.subTotal || 0).toLocaleString("vi-VN")}đ
+          if bookingDetail.comboTotal > 0
+            .inner-item
+              .inner-label Tiền combo:
+              .inner-price #{(bookingDetail.comboTotal || 0).toLocaleString("vi-VN")}đ
+          if bookingDetail.discount > 0
+            .inner-item
+              .inner-label Giảm giá:
+              .inner-price -#{(bookingDetail.discount || 0).toLocaleString("vi-VN")}đ
+          .inner-item(style="border-top: 2px solid #ddd; padding-top: 15px; margin-top: 15px;")
+            .inner-label
+              strong Tổng thanh toán:
+            .inner-price-highlight #{(bookingDetail.total || 0).toLocaleString("vi-VN")}đ
+          .inner-item
+            .inner-label Phương thức thanh toán:
+            .inner-price #{bookingDetail.paymentMethodName}
+          .inner-item
+            .inner-label Trạng thái thanh toán:
+            .inner-price
+              if bookingDetail.paymentStatus === 'paid'
+                span.badge.badge-green #{bookingDetail.paymentStatusName}
+              else
+                span.badge.badge-orange #{bookingDetail.paymentStatusName}
+          .inner-item
+            .inner-label Trạng thái đặt vé:
+            .inner-price
+              if bookingDetail.status === 'confirmed' || bookingDetail.status === 'completed'
+                span.badge.badge-green #{bookingDetail.statusName}
+              else if bookingDetail.status === 'cancelled'
+                span.badge.badge-red #{bookingDetail.statusName}
+              else
+                span.badge.badge-orange #{bookingDetail.statusName}
+        
+        .inner-button(style="margin-top: 30px; text-align: center;")
+          a.button-outline(href="/") Về Trang Chủ
+          a.button-outline(href="/user/orders" style="margin-left: 15px;") Xem Đơn Đặt Của Tôi

@@ -1,33 +1,37 @@
 mixin product-item(item)
-  - const discount = parseInt(((item.priceAdult - item.priceNewAdult) / item.priceAdult) * 100);
+  - const price = item.priceAdult || (item.prices && item.prices.standard) || 0;
+  - const priceNew = item.priceNewAdult || 0;
+  - const discount = (price > 0) ? parseInt(((price - priceNew) / price) * 100) : 0;
+  - const displayDate = item.departureDateFormat || item.releaseDateFormat || "";
 
   .product-item
     .inner-image
-      a(href=`/tour/detail/${item.slug}`)
+      a(href=`/movie/detail/${item.slug}`)
         img(
           alt=item.name
           src=item.avatar
         )
     .inner-discount
       i.fa-solid.fa-bolt
-      | Giảm -#{discount}%
+      | Giảm -#{discount > 0 ? discount : 0}%
     .inner-content
       h3.inner-title
-        a(href=`/tour/detail/${item.slug}`) #{item.name}
+        a(href=`/movie/detail/${item.slug}`) #{item.name}
       .inner-prices
         if(discount > 0)
         .inner-price-old
-            | #{item.priceAdult.toLocaleString("vi-VN")}
+            | #{(price || 0).toLocaleString("vi-VN")}
             span.inner-unit đ
         .inner-price-new
-          | #{item.priceNewAdult.toLocaleString("vi-VN")}
+          | #{(priceNew || price || 0).toLocaleString("vi-VN")}
           span.inner-unit đ
       .inner-desc
         .inner-desc-item
           | Ngày Chiếu:
-          b #{item.departureDateFormat}
+          b #{displayDate}
         .inner-desc-item
           | Thời Gian:
+          b #{item.time || item.duration || "N/A"}
           b #{item.time}
       .inner-meta
         .inner-stock

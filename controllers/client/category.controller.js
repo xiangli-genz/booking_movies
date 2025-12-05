@@ -1,5 +1,5 @@
 const Category = require("../../models/category.model");
-const Tour = require("../../models/tour.model");
+const Movie = require("../../models/movie.model");
 const City = require("../../models/city.model");
 const moment = require("moment");
 const categoryHelper = require("../../helpers/category.helper");
@@ -51,38 +51,38 @@ module.exports.list = async (req, res) => {
     })
     // End Breadcrumb
 
-    // Danh sách tour
-    const listCategoryId = await categoryHelper.getAllSubcategoryIds(category.id);
+    // Danh sách movie
+    const listCategoryId = await categoryHelper.getAllSubcategoryIds(category._id);
     const find = {
       category: { $in: listCategoryId },
       deleted: false,
       status: "active"
     };
 
-    const totalTour = await Tour.countDocuments(find);
+    const totalMovie = await Movie.countDocuments(find);
 
-    const tourList = await Tour
+    const movieList = await Movie
       .find(find)
       .sort({
         position: "desc"
       })
 
-    for(const item of tourList) {
-      item.departureDateFormat = moment(item.departureDate).format("DD/MM/YYYY");
+    for(const item of movieList) {
+      item.releaseDateFormat = moment(item.releaseDate).format("DD/MM/YYYY");
     }
-    // Hết Danh sách tour
+    // Hết Danh sách movie
 
     // Danh sách thành phố
     const cityList = await City.find({});
     // Hết Danh sách thành phố 
 
 
-    res.render("client/pages/tour-list", {
-      pageTitle: "Danh sách tour",
+    res.render("client/pages/movie-list", {
+      pageTitle: "Danh sách movie",
       breadcrumb: breadcrumb,
       category: category,
-      tourList: tourList,
-      totalTour: totalTour,
+      movieList: movieList,
+      totalMovie: totalMovie,
       cityList: cityList
     });
   } else {

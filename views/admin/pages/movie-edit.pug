@@ -1,0 +1,141 @@
+extends ../layouts/default.pug
+include ../mixins/options.pug
+
+block main
+    h1.box-title Chỉnh sửa phim
+
+    - movieDetail = movieDetail || {}; movieDetail.locations = movieDetail.locations || []; movieDetail.showtimes = movieDetail.showtimes || []; cityList = cityList || [];
+
+    .section-8
+      form#movie-edit-form
+        .inner-group(style="display: none;")
+          label(class="inner-label" for="id") Id
+          input(type="text" id="id" name="id" value=(movieDetail && movieDetail._id) || "")
+        .inner-group
+          label(class="inner-label" for="name") Tên phim
+          input(type="text" id="name" name="name" value=(movieDetail && movieDetail.name) || "")
+        .inner-group
+          label(class="inner-label" for="category") Danh mục
+          select(id="category" name="category")
+            option(value="") -- Chọn thể loại --
+            +options(categoryList, 0, movieDetail.category || "")
+        .inner-group
+          label(class="inner-label" for="position") Vị trí
+          input(type="number" id="position" name="position" value=movieDetail.position || 0)
+        .inner-group
+          label(class="inner-label" for="status") Trạng thái
+          select(id="status" name="status")
+            option(
+              value="active"
+              selected=((movieDetail.status || "") == "active" ? true : false)
+            ) Hoạt động
+            option(
+              value="inactive"
+              selected=((movieDetail.status || "") == "inactive" ? true : false)
+            ) Tạm dừng
+        .inner-group.inner-two-col
+          label(class="inner-label" for="avatar") Ảnh đại diện
+          div(class="inner-upload-image" image-default=movieDetail.avatar || "")
+            input(type="file" id="avatar" accept="image/*" filepond-image name="avatar")
+        .inner-group.inner-two-col
+          label(class="inner-label" for="images") Danh sách ảnh
+          div(class="inner-upload-image-multi" list-image-default=JSON.stringify(movieDetail.images || []))
+            input(type="file" multiple data-allow-reorder="true" id="images" accept="image/*" filepond-image-multi name="images")
+        .inner-group
+          label(class="inner-label") Giá vé
+          .inner-input-list
+            .inner-input-item
+              label Ghế thường
+              input(type="number" name="priceStandard" value=(movieDetail.prices && movieDetail.prices.standard) || 50000)
+            .inner-input-item
+              label Ghế VIP
+              input(type="number" name="priceVip" value=(movieDetail.prices && movieDetail.prices.vip) || 60000)
+            .inner-input-item
+              label Ghế đôi
+              input(type="number" name="priceCouple" value=(movieDetail.prices && movieDetail.prices.couple) || 110000)
+        .inner-group
+          label(class="inner-label") Rạp chiếu
+          .inner-checkbox-list
+            each item in cityList
+              .inner-checkbox-item
+                input(
+                  type="checkbox" 
+                  name="locations" 
+                  value=item._id
+                  checked=(movieDetail.locations || []).includes(item._id)
+                )
+                label #{item.name}
+        .inner-group
+        .inner-group
+          label(class="inner-label" for="duration") Thời lượng
+          input(type="text" id="duration" name="duration")
+
+        .inner-group
+          label(class="inner-label" for="director") Đạo diễn
+          input(type="text" id="director" name="director" value=movieDetail.director || "")
+
+        .inner-group
+          label(class="inner-label" for="cast") Diễn viên
+          input(type="text" id="cast" name="cast" value=movieDetail.cast || "")
+
+        .inner-group
+          label(class="inner-label" for="releaseDate") Ngày công chiếu
+          input(
+            type="date" 
+            id="releaseDate" 
+            name="releaseDate" 
+            value=movieDetail.releaseDateFormat || ""
+          )
+
+        .inner-group.inner-two-col
+          label(class="inner-label" for="information") Mô tả
+          textarea(id="information" textarea-mce name="description") #{movieDetail.description || ""}
+
+        .inner-group.inner-two-col
+          label(class="inner-label") Lịch chiếu
+          .inner-schedule
+            .inner-schedule-list
+              if(movieDetail.showtimes && movieDetail.showtimes.length > 0)
+                each item in movieDetail.showtimes
+                  .inner-schedule-item
+                    .inner-schedule-head
+                      span(class="inner-schedule-button inner-move")
+                        <i class="fa-solid fa-up-down-left-right"></i>
+                      select(name="cinema" style="flex: 1; margin-right: 10px;")
+                        option(value="") -- Chọn rạp --
+                        each cinema in cinemaList
+                          option(value=cinema.name selected=(cinema.name==item.cinema)) #{cinema.name}
+                      input(type="date" name="showtimeDate" style="width: 150px; margin-right: 10px;" value=item.date)
+                      input(type="text" name="showtimeTimes" placeholder="10:00,14:00,18:00" style="flex: 1; margin-right: 10px;" value=item.times && item.times.join(','))
+                      select(name="showtimeFormat" style="width: 100px; margin-right: 10px;")
+                        option(value="2D" selected=(item.format=="2D")) 2D
+                        option(value="3D" selected=(item.format=="3D")) 3D
+                        option(value="IMAX" selected=(item.format=="IMAX")) IMAX
+                        option(value="4DX" selected=(item.format=="4DX")) 4DX
+                      span(class="inner-schedule-button inner-remove")
+                        <i class="fa-regular fa-trash-can"></i>
+                    .inner-schedule-body
+                      // no extra body for showtimes
+              else
+                .inner-schedule-item
+                  .inner-schedule-head
+                    span(class="inner-schedule-button inner-move")
+                      <i class="fa-solid fa-up-down-left-right"></i>
+                    select(name="cinema" style="flex: 1; margin-right: 10px;")
+                      option(value="") -- Chọn rạp --
+                      each cinema in cinemaList
+                        option(value=cinema.name) #{cinema.name}
+                    input(type="date" name="showtimeDate" style="width: 150px; margin-right: 10px;")
+                    input(type="text" name="showtimeTimes" placeholder="10:00,14:00,18:00" style="flex: 1; margin-right: 10px;")
+                    select(name="showtimeFormat" style="width: 100px; margin-right: 10px;")
+                      option(value="2D") 2D
+                      option(value="3D") 3D
+                      option(value="IMAX") IMAX
+                      option(value="4DX") 4DX
+                    span(class="inner-schedule-button inner-remove")
+                      <i class="fa-regular fa-trash-can"></i>
+            .inner-schedule-create + Thêm lịch chiếu
+        .inner-button.inner-two-col
+          button Cập nhật
+      .inner-back
+        a(href=`/${pathAdmin}/movie/list`) Quay lại danh sách

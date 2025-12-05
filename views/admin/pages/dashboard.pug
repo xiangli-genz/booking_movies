@@ -9,19 +9,19 @@ block main
             img(src="/admin/assets/images/section-1-icon-1.svg")
           .inner-content
             .inner-title Quản trị viên
-            .inner-number #{overview.totalAdmin.toLocaleString("vi-VN")}
+            .inner-number #{(overview.totalAdmin || 0).toLocaleString("vi-VN")}
       .inner-item
         .inner-icon
           img(src="assets/images/section-1-icon-2.svg")
         .inner-content
           .inner-title Đơn hàng
-          .inner-number #{overview.totalOrder.toLocaleString("vi-VN")}
+          .inner-number #{(overview.totalOrder || 0).toLocaleString("vi-VN")}
       .inner-item
         .inner-icon
           img(src="assets/images/section-1-icon-3.svg")
         .inner-content
           .inner-title Doanh thu
-          .inner-number #{overview.totalPrice.toLocaleString("vi-VN")}đ
+          .inner-number #{(overview.totalPrice || 0).toLocaleString("vi-VN")}đ
     //- End Section 1
 
     //- Section 2
@@ -50,7 +50,7 @@ block main
               th Thanh toán
               th.inner-text-right Ngày đặt
           tbody
-            each order in orders
+            each order in bookings
               tr
                 td
                   .inner-code #{order.orderCode}
@@ -67,16 +67,16 @@ block main
                       .inner-content
                         .inner-name #{item.name}
                         if item.adult
-                          .inner-quantity Người lớn: #{item.adult} x #{item.adultPrice.toLocaleString('vi-VN')}đ
+                          .inner-quantity Người lớn: #{item.adult} x #{(item.adultPrice || 0).toLocaleString('vi-VN')}đ
                         if item.child
-                          .inner-quantity Trẻ em: #{item.child} x #{item.childPrice.toLocaleString('vi-VN')}đ
+                          .inner-quantity Trẻ em: #{item.child} x #{(item.childPrice || 0).toLocaleString('vi-VN')}đ
                         if item.baby
-                          .inner-quantity Em bé: #{item.baby} x #{item.babyPrice.toLocaleString('vi-VN')}đ
+                          .inner-quantity Em bé: #{item.baby} x #{(item.babyPrice || 0).toLocaleString('vi-VN')}đ
                 td
-                  .inner-text Tạm tính: #{order.total.toLocaleString('vi-VN')}đ
+                  .inner-text Tạm tính: #{(order.total || 0).toLocaleString('vi-VN')}đ
                   if order.discount
-                    .inner-text Giảm: #{order.discount.toLocaleString('vi-VN')}đ
-                  .inner-text Thanh toán: #{(order.total - (order.discount || 0)).toLocaleString('vi-VN')}đ
+                    .inner-text Giảm: #{(order.discount || 0).toLocaleString('vi-VN')}đ
+                  .inner-text Thanh toán: #{((order.total || 0) - (order.discount || 0)).toLocaleString('vi-VN')}đ
                   .inner-text PTTT: #{order.paymentMethodName}
                   .inner-text TTTT: #{order.paymentStatusName}
                 td.inner-text-right

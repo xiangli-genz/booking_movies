@@ -97,54 +97,72 @@ module.exports.create = async (req, res) => {
 }
 
 module.exports.createPost = async (req, res) => {
-  if(req.body.position) {
-    req.body.position = parseInt(req.body.position);
-  } else {
-    const totalRecord = await Movie.countDocuments({});
-    req.body.position = totalRecord + 1;
+  try {
+    if(req.body.position) {
+      req.body.position = parseInt(req.body.position);
+    } else {
+      const totalRecord = await Movie.countDocuments({});
+      req.body.position = totalRecord + 1;
+    }
+
+    req.body.createdBy = req.account.id;
+    req.body.updatedBy = req.account.id;
+    
+    if(req.files && req.files.avatar) {
+      req.body.avatar = req.files.avatar[0].path;
+    }
+
+    // Xử lý giá vé
+    req.body.prices = {
+      standard: parseInt(req.body.priceStandard) || 50000,
+      vip: parseInt(req.body.priceVip) || 60000,
+      couple: parseInt(req.body.priceCouple) || 110000
+    };
+
+    // Xử lý ngày phát hành
+    req.body.releaseDate = req.body.releaseDate ? new Date(req.body.releaseDate) : null;
+
+    // Xử lý lịch chiếu - parse nếu là string, bỏ qua nếu là array
+    if(req.body.showtimes) {
+      if(typeof req.body.showtimes === 'string') {
+        try {
+          req.body.showtimes = JSON.parse(req.body.showtimes);
+        } catch (e) {
+          req.body.showtimes = [];
+        }
+      }
+    } else {
+      req.body.showtimes = [];
+    }
+
+    // Xử lý sơ đồ ghế mặc định
+    req.body.seatMap = {
+      rows: 10,
+      columns: 12,
+      vipRows: ["V1", "V2"],
+      coupleRows: ["C1"],
+      bookedSeats: []
+    };
+
+    if(req.files && req.files.images && req.files.images.length > 0) {
+      req.body.images = req.files.images.map(file => file.path);
+    }
+
+    const newRecord = new Movie(req.body);
+    await newRecord.save();
+
+    req.flash("success", "Thêm phim mới thành công!")
+
+    res.json({
+      code: "success"
+    })
+  } catch (error) {
+    console.error("Error creating movie:", error);
+    res.json({
+      code: "error",
+      message: error.message || "Có lỗi xảy ra khi tạo phim"
+    })
   }
-
-  req.body.createdBy = req.account.id;
-  req.body.updatedBy = req.account.id;
-  
-  if(req.files && req.files.avatar) {
-    req.body.avatar = req.files.avatar[0].path;
-  }
-
-  // Xử lý giá vé
-  req.body.prices = {
-    standard: parseInt(req.body.priceStandard) || 50000,
-    vip: parseInt(req.body.priceVip) || 60000,
-    couple: parseInt(req.body.priceCouple) || 110000
-  };
-
-  // Xử lý ngày phát hành
-  req.body.releaseDate = req.body.releaseDate ? new Date(req.body.releaseDate) : null;
-
-  // Xử lý lịch chiếu
-  req.body.showtimes = req.body.showtimes ? JSON.parse(req.body.showtimes) : [];
-
-  // Xử lý sơ đồ ghế mặc định
-  req.body.seatMap = {
-    rows: 10,
-    columns: 12,
-    vipRows: ["V1", "V2"],
-    coupleRows: ["C1"],
-    bookedSeats: []
-  };
-
-  if(req.files && req.files.images && req.files.images.length > 0) {
-    req.body.images = req.files.images.map(file => file.path);
-  }
-
-  const newRecord = new Movie(req.body);
-  await newRecord.save();
-
-  req.flash("success", "Thêm phim mới thành công!")
-
-  res.json({
-    code: "success"
-  })
 }
 
 module.exports.edit = async (req, res) => {

@@ -1,0 +1,245 @@
+extends ../layouts/default.pug
+
+block main
+  - movieDetail = movieDetail || {}; movieDetail.images = movieDetail.images || []; movieDetail.showtimes = movieDetail.showtimes || [];
+  .box-tour-detail
+    .container
+      .inner-container
+        .inner-left
+          .box-images
+            .swiper-box-images-main
+              .swiper-wrapper
+                if movieDetail.images && movieDetail.images.length > 0
+                  each image in movieDetail.images
+                    .swiper-slide
+                      img(src=image)
+                else
+                  .swiper-slide
+                    img(src="/assets/images/default.jpg")
+            .swiper-box-images-thumb
+              .swiper-wrapper
+                if movieDetail.images && movieDetail.images.length > 0
+                  each image in movieDetail.images
+                    .swiper-slide
+                      img(src=image)
+                else
+                  .swiper-slide
+                    img(src="/assets/images/default.jpg")
+
+      .inner-right
+        .inner-head
+          h1.inner-title #{movieDetail.name || "Phim"}
+          .inner-meta
+            span.inner-meta-item
+              i.fa-solid.fa-calendar
+              | Ngày chiếu: <b>#{movieDetail.releaseDateFormat || ""}</b>
+            span.inner-meta-item
+              i.fa-solid.fa-star
+              | Đánh giá: <b>#{movieDetail.rating || "N/A"}</b>
+
+        .inner-body
+          // Ghế ngồi
+          .inner-section
+            .inner-section-title Chọn Ghế
+            .seat-grid
+              - const seatTypes = { 'V': 'VIP', 'C': 'Couple', '': 'Thường' }
+              - const seatPrices = { 'V': 150000, 'C': 200000, '': 100000 }
+              each row in ['A', 'B', 'C', 'D']
+                .seat-row
+                  each col in [1, 2, 3, 4, 5, 6, 7, 8]
+                    - const seatPrefix = row === 'C' ? 'C' : row === 'B' ? 'V' : ''
+                    - const seatId = row + col
+                    - const seatPrice = seatPrices[seatPrefix] || 100000
+                    button.seat(
+                      data-seat=seatId
+                      data-price=seatPrice
+                      type="button"
+                    ) #{seatId}
+
+          // Hiển thị ghế đã chọn
+          .inner-section
+            .inner-section-title Ghế đã chọn
+            .seat-display#selected-seats-display Chưa chọn ghế
+            .price-display
+              span Giá ghế: 
+              span#seat-price 0đ
+
+          // Combos
+          .inner-section
+            .inner-section-title Chọn Combo
+            .combo-list
+              .combo-item
+                .combo-name Bắp Rang Bơ
+                .combo-price 45.000đ
+                .combo-control
+                  button.btn-minus(data-combo="popcorn" type="button") −
+                  input.combo-input(type="number" value="0" data-combo-input="popcorn" readonly)
+                  button.btn-plus(data-combo="popcorn" type="button") +
+
+              .combo-item
+                .combo-name Nước Ngọt
+                .combo-price 35.000đ
+                .combo-control
+                  button.btn-minus(data-combo="coke" type="button") −
+                  input.combo-input(type="number" value="0" data-combo-input="coke" readonly)
+                  button.btn-plus(data-combo="coke" type="button") +
+
+              .combo-item
+                .combo-name Hotdog
+                .combo-price 30.000đ
+                .combo-control
+                  button.btn-minus(data-combo="hotdog" type="button") −
+                  input.combo-input(type="number" value="0" data-combo-input="hotdog" readonly)
+                  button.btn-plus(data-combo="hotdog" type="button") +
+
+              .combo-item
+                .combo-name Nước Suối
+                .combo-price 15.000đ
+                .combo-control
+                  button.btn-minus(data-combo="water" type="button") −
+                  input.combo-input(type="number" value="0" data-combo-input="water" readonly)
+                  button.btn-plus(data-combo="water" type="button") +
+
+              .combo-item
+                .combo-name Combo Set
+                .combo-price 95.000đ
+                .combo-control
+                  button.btn-minus(data-combo="comboset" type="button") −
+                  input.combo-input(type="number" value="0" data-combo-input="comboset" readonly)
+                  button.btn-plus(data-combo="comboset" type="button") +
+
+          // Hiển thị combo đã chọn
+          .inner-section
+            .inner-section-title Combo đã chọn
+            .combo-display#selected-combo-display Chưa chọn combo
+            .price-display
+              span Giá combo: 
+              span#combo-price 0đ
+
+          // Tổng cộng
+          .inner-section
+            .inner-section-title Tổng cộng
+            .total-display(total-price)
+              span 0đ
+
+        .inner-footer
+          input.inner-location(location-from type="hidden" value=movieDetail._id || "")
+          button.inner-button-add-cart(tour-id=movieDetail._id type="button")
+            i.fa-solid.fa-cart-plus
+            | Thêm vào giỏ
+
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectedSeats = [];
+      const combos = {
+        popcorn: { quantity: 0, price: 45000, name: 'Bắp Rang Bơ' },
+        coke: { quantity: 0, price: 35000, name: 'Nước Ngọt' },
+        hotdog: { quantity: 0, price: 30000, name: 'Hotdog' },
+        water: { quantity: 0, price: 15000, name: 'Nước Suối' },
+        comboset: { quantity: 0, price: 95000, name: 'Combo Set' }
+      };
+      
+      // Seat Selection
+      const seats = document.querySelectorAll('.seat');
+      seats.forEach(seat => {
+        seat.addEventListener('click', function(e) {
+          e.preventDefault();
+          if(this.classList.contains('seat-selected')) {
+            this.classList.remove('seat-selected');
+            const index = selectedSeats.indexOf(this.dataset.seat);
+            if(index > -1) selectedSeats.splice(index, 1);
+          } else {
+            this.classList.add('seat-selected');
+            selectedSeats.push(this.dataset.seat);
+          }
+          updateDisplay();
+        });
+      });
+      
+      // Combo Selection - Plus
+      document.querySelectorAll('.btn-plus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const comboKey = this.dataset.combo;
+          if(combos[comboKey]) {
+            combos[comboKey].quantity++;
+            const input = document.querySelector(`input[data-combo-input="${comboKey}"]`);
+            if(input) input.value = combos[comboKey].quantity;
+            updateDisplay();
+          }
+        });
+      });
+      
+      // Combo Selection - Minus
+      document.querySelectorAll('.btn-minus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const comboKey = this.dataset.combo;
+          if(combos[comboKey] && combos[comboKey].quantity > 0) {
+            combos[comboKey].quantity--;
+            const input = document.querySelector(`input[data-combo-input="${comboKey}"]`);
+            if(input) input.value = combos[comboKey].quantity;
+            updateDisplay();
+          }
+        });
+      });
+      
+      function updateDisplay() {
+        // Update selected seats display
+        const seatsDisplay = document.getElementById('selected-seats-display');
+        if(seatsDisplay) {
+          if(selectedSeats.length > 0) {
+            seatsDisplay.innerHTML = selectedSeats.join(', ');
+          } else {
+            seatsDisplay.innerHTML = 'Chưa chọn ghế';
+          }
+        }
+        
+        // Calculate seat price
+        let seatPrice = 0;
+        selectedSeats.forEach(seatId => {
+          const seat = document.querySelector(`[data-seat="${seatId}"]`);
+          if(seat) {
+            seatPrice += parseInt(seat.dataset.price) || 0;
+          }
+        });
+        const seatPriceEl = document.getElementById('seat-price');
+        if(seatPriceEl) {
+          seatPriceEl.innerText = (seatPrice || 0).toLocaleString('vi-VN') + 'đ';
+        }
+        
+        // Update combo display
+        const comboDisplay = document.getElementById('selected-combo-display');
+        const selectedCombos = [];
+        let comboPrice = 0;
+        
+        Object.keys(combos).forEach(key => {
+          if(combos[key].quantity > 0) {
+            selectedCombos.push(`${combos[key].name} x${combos[key].quantity}`);
+            comboPrice += combos[key].price * combos[key].quantity;
+          }
+        });
+        
+        if(comboDisplay) {
+          if(selectedCombos.length > 0) {
+            comboDisplay.innerHTML = selectedCombos.join('<br>');
+          } else {
+            comboDisplay.innerHTML = 'Chưa chọn combo';
+          }
+        }
+        const comboPriceEl = document.getElementById('combo-price');
+        if(comboPriceEl) {
+          comboPriceEl.innerText = (comboPrice || 0).toLocaleString('vi-VN') + 'đ';
+        }
+        
+        // Update total
+        const total = seatPrice + comboPrice;
+        const totalEl = document.querySelector('[total-price]');
+        if(totalEl) {
+          totalEl.innerText = (total || 0).toLocaleString('vi-VN') + 'đ';
+        }
+      }
+      
+      // Initialize display
+      updateDisplay();
+    });

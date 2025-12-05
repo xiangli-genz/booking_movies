@@ -573,7 +573,7 @@ if(boxTourDetail) {
     const priceBaby = parseInt(inputStockBaby.getAttribute("price"));
     const totalPrice = (quantityAdult * priceAdult) + (quantityChildren * priceChildren) + (quantityBaby * priceBaby);
     const elementTotalPrice = document.querySelector("[total-price]");
-    elementTotalPrice.innerHTML = totalPrice.toLocaleString("vi-VN");
+    elementTotalPrice.innerHTML = Number(totalPrice || 0).toLocaleString("vi-VN");
   }
 
   // Bước 2
@@ -696,7 +696,7 @@ const drawCart = () => {
     .then(data => {
       if(data.code == "success") {
         // Hiển thị các item
-        const htmlCart = data.cart.map(item => {
+        const htmlCart = data.cart.map((item, index) => {
           // Hiển thị danh sách ghế
           const seatsHtml = item.seats && item.seats.length > 0 
             ? `<div class="detail-row">
@@ -729,15 +729,15 @@ const drawCart = () => {
             <div class="inner-price-breakdown">
               <div class="detail-row">
                 <span class="detail-label">Tiền vé:</span>
-                <span class="detail-value">${item.totalSeatPrice.toLocaleString("vi-VN")}đ</span>
+                <span class="detail-value">${Number(item.totalSeatPrice || 0).toLocaleString("vi-VN")}đ</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Tiền combo:</span>
-                <span class="detail-value">${item.totalComboPrice.toLocaleString("vi-VN")}đ</span>
+                <span class="detail-value">${Number(item.totalComboPrice || 0).toLocaleString("vi-VN")}đ</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label"><strong>Tổng cộng:</strong></span>
-                <span class="detail-value"><strong>${item.totalPrice.toLocaleString("vi-VN")}đ</strong></span>
+                <span class="detail-value"><strong>${Number(item.totalPrice || 0).toLocaleString("vi-VN")}đ</strong></span>
               </div>
             </div>
           `;
@@ -745,13 +745,14 @@ const drawCart = () => {
           return `
             <div class="inner-tour-item">
               <div class="inner-actions">
-                <button class="inner-delete" button-delete tour-id="${item.tourId}">
+                <button class="inner-delete" button-delete data-index="${index}" tour-id="${item.tourId}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>
                 <input 
                   class="inner-check" 
                   type="checkbox" ${item.checked ? 'checked' : ''}
                   input-check
+                  data-index="${index}"
                   tour-id="${item.tourId}"
                 >
               </div>
@@ -803,37 +804,39 @@ const drawCart = () => {
         const totalPrice = subTotalPrice - discount;
         
         const cartSubTotal = document.querySelector("[cart-sub-total]");
-        cartSubTotal.innerHTML = subTotalPrice.toLocaleString("vi-VN");
+        if (cartSubTotal) cartSubTotal.innerHTML = Number(subTotalPrice || 0).toLocaleString("vi-VN");
 
         const cartTotal = document.querySelector("[cart-total]");
-        cartTotal.innerHTML = totalPrice.toLocaleString("vi-VN");
+        if (cartTotal) cartTotal.innerHTML = Number(totalPrice || 0).toLocaleString("vi-VN");
 
-        // Sự kiện xóa item
+        // Sự kiện xóa item (sử dụng data-index để xử lý nhiều item cùng tour)
         const listButtonDelete = document.querySelectorAll("[button-delete]");
         listButtonDelete.forEach(button => {
           button.addEventListener("click", () => {
-            const tourId = button.getAttribute("tour-id");
-            const cart = JSON.parse(localStorage.getItem("cart"));
-            const indexItem = cart.findIndex(tour => tour.tourId == tourId);
-            cart.splice(indexItem, 1);
-            localStorage.setItem("cart", JSON.stringify(cart));
-            updateCartToServer(cart);
-            drawCart();
+            const idx = parseInt(button.getAttribute('data-index'));
+            const cart = JSON.parse(localStorage.getItem("cart") || '[]');
+            if (!isNaN(idx) && idx >= 0 && idx < cart.length) {
+              cart.splice(idx, 1);
+              localStorage.setItem("cart", JSON.stringify(cart));
+              updateCartToServer(cart);
+              drawCart();
+            }
           })
         })
 
-        // Sự kiện check item
+        // Sự kiện check item (dùng data-index để xác định item chính xác)
         const listInputCheck = document.querySelectorAll("[input-check]");
         listInputCheck.forEach(input => {
           input.addEventListener("change", () => {
             const checked = input.checked;
-            const tourId = input.getAttribute("tour-id");
-            const cart = JSON.parse(localStorage.getItem("cart"));
-            const itemUpdate = cart.find(item => item.tourId == tourId);
-            itemUpdate.checked = checked;
-            localStorage.setItem("cart", JSON.stringify(cart));
-            updateCartToServer(cart);
-            drawCart();
+            const idx = parseInt(input.getAttribute('data-index'));
+            const cart = JSON.parse(localStorage.getItem("cart") || '[]');
+            if (!isNaN(idx) && idx >= 0 && idx < cart.length) {
+              cart[idx].checked = checked;
+              localStorage.setItem("cart", JSON.stringify(cart));
+              updateCartToServer(cart);
+              drawCart();
+            }
           })
         })
       }
@@ -850,33 +853,65 @@ if(pageCart) {
 const boxMovieDetail = document.querySelector(".box-tour-detail");
 if(boxMovieDetail) {
   const buttonAddToCart = boxMovieDetail.querySelector(".inner-button-add-cart");
-  
-  buttonAddToCart.addEventListener("click", () => {
-    const tourId = buttonAddToCart.getAttribute("tour-id");
-    const locationFrom = boxMovieDetail.querySelector("[location-from]").value;
-    
-    // Lấy thông tin ghế và combo từ window (đã được set bởi script trong tour-detail.pug)
-    const selectedSeats = window.selectedSeats || [];
-    const combos = window.selectedCombos || {};
-    
-    if(selectedSeats.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 ghế!");
-      return;
-    }
 
-    const cartItem = {
-      tourId: tourId,
-      locationFrom: locationFrom,
-      seats: selectedSeats,
-      combos: combos,
-      checked: true
-    };
+  if(buttonAddToCart) {
+    buttonAddToCart.addEventListener('click', () => {
+      // Get the seat selections from the visual DOM (elements with seat-selected class)
+      const selectedSeats = Array.from(document.querySelectorAll('.seat.seat-selected')).map(s => s.dataset.seat);
+      
+      if(selectedSeats.length === 0) {
+        alert("Vui lòng chọn ít nhất 1 ghế!");
+        return;
+      }
 
-    const cart = JSON.parse(localStorage.getItem("cart"));
-    
-    const indexItemExist = cart.findIndex(item => item.tourId == tourId);
-    if(indexItemExist != -1) {
-      cart[indexItemExist] = cartItem;
+      const tourId = buttonAddToCart.getAttribute("tour-id");
+      const locationFromEl = boxMovieDetail.querySelector("[location-from]");
+      const locationFrom = locationFromEl ? locationFromEl.value : '';
+
+      // Lấy danh sách combo từ DOM inputs (được quản lý bởi inline script)
+      const combosKeys = ['popcorn','coke','hotdog','water','comboset'];
+      const combos = {};
+      combosKeys.forEach(key => {
+        const input = document.querySelector(`input[data-combo-input="${key}"]`);
+        const quantity = input ? parseInt(input.value) || 0 : 0;
+        const comboItemEl = input ? input.closest('.combo-item') : null;
+        const comboNameEl = comboItemEl ? comboItemEl.querySelector('.combo-name') : null;
+        const comboPriceEl = comboItemEl ? comboItemEl.querySelector('.combo-price') : null;
+        const name = comboNameEl ? comboNameEl.textContent.trim() : key;
+        let price = 0;
+        if (comboPriceEl) {
+          const priceText = comboPriceEl.textContent.trim();
+          price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+        }
+        combos[key] = { name: name, price: price, quantity: quantity };
+      });
+
+      const cartItem = {
+        tourId: tourId,
+        locationFrom: locationFrom,
+        seats: selectedSeats,
+        combos: combos,
+        checked: true
+      };
+
+      let cart = JSON.parse(localStorage.getItem("cart") || '[]');
+
+      // If same tourId+locationFrom exists, replace it (current behavior).
+      // This ensures seats & combos are included.
+      const indexItemExist = cart.findIndex(item => item.tourId == tourId && item.locationFrom == locationFrom);
+      if(indexItemExist != -1) {
+        cart[indexItemExist] = cartItem;
+      } else {
+        cart.push(cartItem);
+      }
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+      updateCartToServer(cart);
+      window.location.href = "/cart";
+    });
+  }
+}
+// End Box Movie Detail
     } else {
       cart.push(cartItem);
     }

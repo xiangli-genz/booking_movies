@@ -18,11 +18,11 @@ block main
               i.fa-solid.fa-filter
             .inner-body
               .inner-group
-                .inner-label Điểm đi
+                .inner-label Rạp Chiếu
                 select(name="locationFrom")
-                  option(value="") -- Chọn điểm đi --
+                  option(value="") -- Chọn rạp --
                   each item in cityList
-                    option(value=item.id) #{item.name}
+                    option(value=item._id) #{item.name}
               .inner-group
                 .inner-label Điểm đến
                 input(
@@ -79,12 +79,12 @@ block main
           
             .inner-count-record
               | Tất cả:
-              b #{totalTour} Tour
+              b #{totalMovie} Phim
             button.inner-filter-mobile
               span.inner-title Bộ Lọc
               i.fa-solid.fa-filter
           .inner-list-tour
-            each item in tourList
+            each item in movieList
               // Product Item
               +product-item(item)
               // End Product Item
