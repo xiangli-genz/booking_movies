@@ -43,7 +43,13 @@ module.exports.list = async (req, res) => {
     find.slug = keywordRegex;
   }
 
-  // Pagination
+  // PHÂN TRANG
+  const limit = 10;
+  const page = parseInt(req.query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  const totalRecords = await Movie.countDocuments(find);
+  const totalPages = Math.ceil(totalRecords / limit);
 
   const movieList = await Movie
     .find(find)
@@ -84,6 +90,12 @@ module.exports.list = async (req, res) => {
     pageTitle: "Quản lý phim",
     movieList: movieList,
     accountAdminList: accountAdminList,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalRecords: totalRecords,
+      limit: limit
+    }
   })
 }
 
@@ -216,8 +228,8 @@ module.exports.editPatch = async (req, res) => {
 
     req.body.updatedBy = req.account.id;
     
-    if(req.files) {
-      req.body.avatar = req.files.avatar.path;
+    if(req.files && req.files.avatar) {
+      req.body.avatar = req.files.avatar[0].path;
     } else {
       delete req.body.avatar;
     }

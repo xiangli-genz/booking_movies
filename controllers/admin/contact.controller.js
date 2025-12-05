@@ -25,12 +25,21 @@ module.exports.list = async (req, res) => {
   if (req.query.keyword) {
   const keywordRegex = new RegExp(req.query.keyword, "i"); 
   find.email = keywordRegex;
-}
+  }
+
+  const limit = 10;
+  const page = parseInt(req.query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  const totalRecords = await Contact.countDocuments(find);
+  const totalPages = Math.ceil(totalRecords / limit);
 
 
   const contactList = await Contact.find(find).sort({
     createdAt: "desc"
-  });
+  })
+  .skip(skip)
+  .limit(limit);
 
   for (const item of contactList) {
     item.createdAtFormat = moment(item.createdAt).format("HH:mm - DD/MM/YYYY");
@@ -38,7 +47,13 @@ module.exports.list = async (req, res) => {
 
   res.render("admin/pages/contact-list", {
     pageTitle: "Thông tin liên hệ",
-    contactList: contactList
+    contactList: contactList,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalRecords: totalRecords,
+      limit: limit
+    }
   });
 };
 

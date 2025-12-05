@@ -91,12 +91,20 @@ block main
               td
                 .inner-buttons
                   a(
-                    href=`/${pathAdmin}/booking/edit/${booking.id}`
+                    href=`/${pathAdmin}/booking/edit/${booking._id}`
                     class="inner-edit"
                   ) <i class="fa-regular fa-pen-to-square"></i>
                   button(
                     button-delete 
                     class="inner-delete"
-                    data-api=`/${pathAdmin}/booking/delete/${booking.id}`
+                    data-api=`/${pathAdmin}/booking/delete/${booking._id}`
                   ) <i class="fa-regular fa-trash-can"></i>
   //- End Section 6
+  //- Section 7 - PHÂN TRANG
+  .section-7
+    span(class="inner-label") 
+      | Hiển thị #{(pagination.currentPage - 1) * pagination.limit + 1} - #{pagination.endRecord} của #{pagination.totalRecords}
+    select(class="inner-pagination" pagination)
+      - for(let i = 1; i <= pagination.totalPages; i++)
+        option(value=i selected=(i == pagination.currentPage)) Trang #{i}
+  //- End Section 7

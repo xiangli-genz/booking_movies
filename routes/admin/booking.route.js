@@ -36,11 +36,21 @@ router.get("/list", async (req, res) => {
     }
   }
 
+  // PHÂN TRANG
+  const limit = 10;
+  const page = parseInt(req.query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  const totalRecords = await Booking.countDocuments(find);
+  const totalPages = Math.ceil(totalRecords / limit);
+
   const bookingList = await Booking
     .find(find)
     .sort({
       createdAt: "desc"
-    });
+    })
+    .skip(skip)
+    .limit(limit);
 
   for (const booking of bookingList) {
     booking.paymentMethodName = {
@@ -61,12 +71,23 @@ router.get("/list", async (req, res) => {
 
     booking.createdAtTime = moment(booking.createdAt).format("HH:mm");
     booking.createdAtDate = moment(booking.createdAt).format("DD/MM/YYYY");
-    booking.showtimeDateFormat = moment(booking.showtime.date).format("DD/MM/YYYY");
+    if(booking.showtime && booking.showtime.date) {
+      booking.showtimeDateFormat = moment(booking.showtime.date).format("DD/MM/YYYY");
+    } else {
+      booking.showtimeDateFormat = "--";
+    }
   }
 
   res.render("admin/pages/booking-list", {
     pageTitle: "Quản lý đặt vé",
-    bookingList: bookingList
+    bookingList: bookingList,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalRecords: totalRecords,
+      limit: limit,
+      endRecord: Math.min(page * limit, totalRecords)
+    }
   });
 });
 

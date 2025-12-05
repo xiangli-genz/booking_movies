@@ -48,7 +48,13 @@ module.exports.list = async (req, res) => {
   }
   // Hết Tìm kiếm
 
+  // PHÂN TRANG
+  const limit = 10;
+  const page = parseInt(req.query.page) || 1;
+  const skip = (page - 1) * limit;
 
+  const totalRecords = await Category.countDocuments(find);
+  const totalPages = Math.ceil(totalRecords / limit);
 
   const categoryList = await Category
     .find(find)
@@ -56,6 +62,8 @@ module.exports.list = async (req, res) => {
 
     position: "desc"
   })
+  .skip(skip)
+  .limit(limit);
 
 
   for (const item of categoryList) {
@@ -87,6 +95,12 @@ module.exports.list = async (req, res) => {
         pageTitle: "Quản lý danh mục",
         categoryList: categoryList,
         accountAdminList: accountAdminList,
+        pagination: {
+          currentPage: page,
+          totalPages: totalPages,
+          totalRecords: totalRecords,
+          limit: limit
+    }
     });
 }
 module.exports.create = async (req, res) => {
