@@ -27,6 +27,11 @@ const schema = new mongoose.Schema(
     avatar: String,
     address: String,
     cart: [cartItemSchema],
+    bookings: [{
+      bookingId: String,
+      bookingCode: String,
+      createdAt: Date
+    }],
     status: {
       type: String,
       default: "active"

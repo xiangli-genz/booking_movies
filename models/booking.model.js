@@ -48,6 +48,9 @@ const schema = new mongoose.Schema(
     // Trạng thái đặt vé
     status: String, // initial, confirmed, cancelled, completed
     
+    // Người dùng (nếu khách đã đăng nhập)
+    userId: String,
+
     // QR Code cho vé
     qrCode: String,
     

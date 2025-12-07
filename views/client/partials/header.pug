@@ -49,13 +49,6 @@ header.header
             a(href="/contacts") Liên hệ
         .inner-overlay
       // Cart
-      .inner-cart
-        a(href="/cart")
-          img(
-            alt="Cart" 
-            src="/assets/images/icon-cart.png"
-            )
-          span(mini-cart) 0
       // User
       .inner-cart
         if user
@@ -84,9 +77,9 @@ header.header
                     i.fa-solid.fa-user
                     | Thông tin cá nhân
                 li
-                  a(href="/user/orders")
+                  a(href="/user/bookings")
                     i.fa-solid.fa-list-check
-                    | Đơn hàng của tôi
+                    | Đơn đặt vé của tôi
                 li
                   a(href="/user/change-password")
                     i.fa-solid.fa-key

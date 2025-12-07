@@ -1,3 +1,4 @@
+// controllers/client/booking.controller.js
 const Movie = require("../../models/movie.model");
 const Booking = require("../../models/booking.model");
 const Cinema = require("../../models/cinema.model");
@@ -8,10 +9,26 @@ const moment = require("moment");
 
 module.exports.createPost = async (req, res) => {
   try {
+    // Tạo mã booking
     req.body.bookingCode = "BK" + generateHelper.generateRandomNumber(10);
     
-    const { movieId, cinema, showtimeDate, showtimeTime, showtimeFormat, seats, combos } = req.body;
+    const { movieId, cinema, showtimeDate, showtimeTime, showtimeFormat, seats, combos, fullName, phone, email, note, paymentMethod } = req.body;
     
+    // Validate dữ liệu đầu vào
+    if (!movieId || !cinema || !showtimeDate || !showtimeTime || !seats || seats.length === 0) {
+      return res.json({
+        code: "error",
+        message: "Thiếu thông tin đặt vé bắt buộc!"
+      });
+    }
+
+    if (!fullName || !phone) {
+      return res.json({
+        code: "error",
+        message: "Vui lòng nhập đầy đủ họ tên và số điện thoại!"
+      });
+    }
+
     // Lấy thông tin phim
     const movie = await Movie.findOne({
       _id: movieId,
@@ -28,40 +45,51 @@ module.exports.createPost = async (req, res) => {
 
     // Tính tổng tiền vé
     let subTotal = 0;
-    const seatDetails = seats.map(seat => {
+    const seatDetails = [];
+    
+    // Xử lý danh sách ghế
+    const seatArray = Array.isArray(seats) ? seats : [seats];
+    
+    seatArray.forEach(seat => {
       let seatType = 'standard';
-      let price = movie.prices.standard;
+      let price = movie.prices && movie.prices.standard ? movie.prices.standard : 50000;
       
-      if(seat.startsWith('V')) {
+      // Xác định loại ghế dựa vào ký tự đầu
+      const seatStr = String(seat);
+      if(seatStr.startsWith('V')) {
         seatType = 'vip';
-        price = movie.prices.vip;
-      } else if(seat.startsWith('C')) {
+        price = movie.prices && movie.prices.vip ? movie.prices.vip : 60000;
+      } else if(seatStr.startsWith('C') || seatStr.includes('-')) {
         seatType = 'couple';
-        price = movie.prices.couple;
+        price = movie.prices && movie.prices.couple ? movie.prices.couple : 110000;
       }
       
       subTotal += price;
       
-      return {
-        seatNumber: seat,
+      seatDetails.push({
+        seatNumber: seatStr,
         type: seatType,
         price: price
-      };
+      });
     });
 
     // Tính tổng tiền combo
     let comboTotal = 0;
     const comboDetails = [];
-    if(combos) {
+    
+    if(combos && typeof combos === 'object') {
       Object.keys(combos).forEach(key => {
         const combo = combos[key];
-        if(combo && combo.quantity > 0) {
-          const totalPrice = combo.price * combo.quantity;
+        if(combo && combo.quantity && combo.quantity > 0) {
+          const quantity = parseInt(combo.quantity) || 0;
+          const price = parseInt(combo.price) || 0;
+          const totalPrice = price * quantity;
+          
           comboTotal += totalPrice;
           comboDetails.push({
-            name: combo.name,
-            quantity: combo.quantity,
-            price: combo.price,
+            name: combo.name || key,
+            quantity: quantity,
+            price: price,
             totalPrice: totalPrice
           });
         }
@@ -69,58 +97,65 @@ module.exports.createPost = async (req, res) => {
     }
 
     // Giảm giá
-    req.body.discount = 0;
+    const discount = 0;
 
     // Tổng thanh toán
-    req.body.total = subTotal + comboTotal - req.body.discount;
+    const total = subTotal + comboTotal - discount;
+
+    // Chuyển đổi ngày chiếu sang Date object
+    let showtimeDateObj;
+    try {
+      showtimeDateObj = new Date(showtimeDate);
+      if (isNaN(showtimeDateObj.getTime())) {
+        throw new Error("Invalid date");
+      }
+    } catch (error) {
+      return res.json({
+        code: "error",
+        message: "Ngày chiếu không hợp lệ!"
+      });
+    }
 
     // Lưu thông tin đặt vé
     const newBooking = new Booking({
       bookingCode: req.body.bookingCode,
-      fullName: req.body.fullName,
-      phone: req.body.phone,
-      email: req.body.email || "",
-      note: req.body.note || "",
+      fullName: fullName,
+      phone: phone,
+      email: email || "",
+      note: note || "",
       movieId: movie._id,
       movieName: movie.name,
       movieAvatar: movie.avatar,
       cinema: cinema,
       showtime: {
-        date: new Date(showtimeDate),
+        date: showtimeDateObj,
         time: showtimeTime,
-        format: showtimeFormat
+        format: showtimeFormat || "2D"
       },
       seats: seatDetails,
       combos: comboDetails,
       subTotal: subTotal,
       comboTotal: comboTotal,
-      discount: req.body.discount,
-      total: req.body.total,
-      paymentMethod: req.body.paymentMethod,
+      discount: discount,
+      total: total,
+      paymentMethod: paymentMethod || "money",
       paymentStatus: "unpaid",
       status: "initial"
     });
 
     await newBooking.save();
 
-    // Cập nhật ghế đã đặt trong movie (để tránh đặt trùng)
-    // Chỉ cập nhật tạm thời, sẽ xóa nếu không thanh toán trong 10 phút
-    await Movie.updateOne(
-      { _id: movieId },
-      { $addToSet: { "seatMap.bookedSeats": { $each: seats } } }
-    );
-
     res.json({
       code: "success",
       message: "Đặt vé thành công!",
-      bookingId: newBooking.id
+      bookingId: newBooking._id
     });
 
   } catch (error) {
-    console.log(error);
+    console.error("Error creating booking:", error);
     res.json({
       code: "error",
-      message: "Đặt vé không thành công!"
+      message: "Đặt vé không thành công! Lỗi: " + error.message
     });
   }
 }
@@ -129,9 +164,15 @@ module.exports.success = async (req, res) => {
   try {
     const { bookingId, phone } = req.query;
 
+    if (!bookingId || !phone) {
+      res.redirect("/");
+      return;
+    }
+
     const bookingDetail = await Booking.findOne({
       _id: bookingId,
-      phone: phone
+      phone: phone,
+      deleted: false
     });
 
     if(!bookingDetail) {
@@ -139,6 +180,7 @@ module.exports.success = async (req, res) => {
       return;
     }
 
+    // Format payment method
     bookingDetail.paymentMethodName = {
       money: "Tiền mặt tại quầy",
       zalopay: "ZaloPay",
@@ -146,8 +188,10 @@ module.exports.success = async (req, res) => {
       momo: "Momo"
     }[bookingDetail.paymentMethod] || bookingDetail.paymentMethod;
 
+    // Format payment status
     bookingDetail.paymentStatusName = bookingDetail.paymentStatus === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
     
+    // Format booking status
     bookingDetail.statusName = {
       initial: "Đang xử lý",
       confirmed: "Đã xác nhận",
@@ -155,6 +199,7 @@ module.exports.success = async (req, res) => {
       completed: "Hoàn thành"
     }[bookingDetail.status] || bookingDetail.status;
 
+    // Format dates
     bookingDetail.createdAtFormat = moment(bookingDetail.createdAt).format("HH:mm - DD/MM/YYYY");
     bookingDetail.showtimeDateFormat = moment(bookingDetail.showtime.date).format("DD/MM/YYYY");
 
@@ -164,6 +209,7 @@ module.exports.success = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("Error in booking success:", error);
     res.redirect("/");
   }
 }
@@ -173,6 +219,13 @@ module.exports.getBookedSeats = async (req, res) => {
   try {
     const { movieId, cinema, date, time } = req.query;
     
+    if (!movieId || !cinema || !date || !time) {
+      return res.json({
+        code: "error",
+        message: "Thiếu thông tin cần thiết"
+      });
+    }
+
     const movie = await Movie.findById(movieId);
     
     if(!movie) {
@@ -182,11 +235,19 @@ module.exports.getBookedSeats = async (req, res) => {
       });
     }
 
-    // Lấy danh sách ghế đã đặt từ các booking đã confirm
+    // Chuyển đổi date string sang Date object
+    const searchDate = new Date(date);
+    const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
+
+    // Lấy danh sách ghế đã đặt từ các booking
     const bookings = await Booking.find({
       movieId: movieId,
       cinema: cinema,
-      "showtime.date": new Date(date),
+      "showtime.date": {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
       "showtime.time": time,
       status: { $in: ["initial", "confirmed"] },
       deleted: false
@@ -194,9 +255,11 @@ module.exports.getBookedSeats = async (req, res) => {
 
     const bookedSeats = [];
     bookings.forEach(booking => {
-      booking.seats.forEach(seat => {
-        bookedSeats.push(seat.seatNumber);
-      });
+      if (booking.seats && booking.seats.length > 0) {
+        booking.seats.forEach(seat => {
+          bookedSeats.push(seat.seatNumber);
+        });
+      }
     });
 
     res.json({
@@ -205,6 +268,7 @@ module.exports.getBookedSeats = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("Error getting booked seats:", error);
     res.json({
       code: "error",
       message: "Lỗi khi lấy thông tin ghế"
@@ -241,17 +305,19 @@ module.exports.combo = async (req, res) => {
       combos: combos
     });
   } catch (error) {
+    console.error("Error in combo page:", error);
     res.redirect("/");
   }
 };
 
 module.exports.checkout = async (req, res) => {
   try {
-    // Checkout page will read bookingData from sessionStorage/localStorage on client side
     res.render('client/pages/booking-checkout', {
-      pageTitle: 'Xác nhận & Thanh toán'
+      pageTitle: 'Xác nhận & Thanh toán',
+      movieDetail: {} // Để tránh lỗi nếu không có dữ liệu
     });
   } catch (error) {
+    console.error("Error in checkout:", error);
     res.redirect('/');
   }
 };

@@ -1,3 +1,4 @@
+// routes/client/user.route.js
 const router = require('express').Router();
 const multer = require('multer');
 
@@ -35,8 +36,11 @@ router.patch('/profile/edit', authMiddleware.verifyToken, upload.single('avatar'
 router.get('/change-password', authMiddleware.verifyToken, userController.changePassword);
 router.patch('/change-password', authMiddleware.verifyToken, userController.changePasswordPatch);
 
-// Orders
+// Orders (tour bookings)
 router.get('/orders', authMiddleware.verifyToken, userController.orders);
+
+// Bookings (movie tickets) - THÊM MỚI
+router.get('/bookings', authMiddleware.verifyToken, userController.bookings);
 
 // Logout
 router.post('/logout', userController.logoutPost);

@@ -408,3 +408,51 @@ module.exports.logoutPost = async (req, res) => {
     message: "Đăng xuất thành công!"
   });
 }
+
+module.exports.bookings = async (req, res) => {
+  try {
+    const Booking = require("../../models/booking.model");
+    const moment = require("moment");
+    
+    // Lấy bookings theo số điện thoại của user
+    const bookings = await Booking.find({
+      phone: req.user.phone,
+      deleted: false
+    }).sort({
+      createdAt: "desc"
+    });
+
+    // Format dữ liệu
+    for (const booking of bookings) {
+      booking.paymentMethodName = {
+        money: "Tiền mặt",
+        zalopay: "ZaloPay",
+        bank: "Chuyển khoản",
+        momo: "Momo"
+      }[booking.paymentMethod] || booking.paymentMethod;
+
+      booking.paymentStatusName = booking.paymentStatus === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
+
+      booking.statusName = {
+        initial: "Đang xử lý",
+        confirmed: "Đã xác nhận",
+        cancelled: "Đã hủy",
+        completed: "Hoàn thành"
+      }[booking.status] || booking.status;
+
+      booking.createdAtFormat = moment(booking.createdAt).format("HH:mm - DD/MM/YYYY");
+      booking.showtimeDateFormat = moment(booking.showtime.date).format("DD/MM/YYYY");
+    }
+
+    res.render("client/pages/user-bookings", {
+      pageTitle: "Đơn đặt vé của tôi",
+      bookings: bookings
+    });
+  } catch (error) {
+    console.error("Error in bookings:", error);
+    res.render("client/pages/user-bookings", {
+      pageTitle: "Đơn đặt vé của tôi",
+      bookings: []
+    });
+  }
+};

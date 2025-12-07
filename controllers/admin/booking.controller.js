@@ -3,6 +3,7 @@
 // ============================================
 const moment = require("moment");
 const Booking = require("../../models/booking.model");
+const User = require("../../models/user.model");
 
 module.exports.list = async (req, res) => {
   const find = {
@@ -76,6 +77,15 @@ module.exports.list = async (req, res) => {
       booking.showtimeDateFormat = moment(booking.showtime.date).format("DD/MM/YYYY");
     } else {
       booking.showtimeDateFormat = "--";
+    }
+    // Nếu có userId, gắn thông tin user để hiển thị
+    if(booking.userId) {
+      try {
+        const userInfo = await User.findOne({ _id: booking.userId }).select('fullName email');
+        booking.userFullName = userInfo ? (userInfo.fullName || userInfo.email) : null;
+      } catch (e) {
+        booking.userFullName = null;
+      }
     }
   }
 
