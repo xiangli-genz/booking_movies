@@ -1,0 +1,125 @@
+extends ../layouts/default.pug
+
+block main
+  .checkout-container
+    .container
+      h2.box-title Xác nhận & Thanh toán
+
+      .checkout-layout
+        .left
+          .card
+            h3 Thông tin đặt vé
+            ul
+              li Rạp: span#cinema --
+              li Ngày: span#date --
+              li Giờ: span#time --
+              li Ghế: span#seats --
+          .card
+            h3 Thông tin khách hàng
+            label(for='fullName') Họ tên
+            input#fullName(type='text')
+            label(for='phone') SĐT
+            input#phone(type='text')
+            label(for='email') Email
+            input#email(type='email')
+            label(for='note') Ghi chú
+            textarea#note
+        .right
+          .card
+            h3 Tóm tắt giá
+            .price-row
+              span Tiền vé
+              span#ticketPrice 0đ
+            .price-row
+              span Tiền combo
+              span#comboPrice 0đ
+            .price-row.total
+              strong Tổng
+              strong#totalPrice 0đ
+          .card
+            h3 Chọn phương thức thanh toán
+            select#paymentMethod
+              option(value='money') Thanh toán tại quầy
+              option(value='zalopay') ZaloPay
+              option(value='momo') Momo
+              option(value='bank') Chuyển khoản
+            button#btnPay.btn-primary Thanh toán
+
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Try to read bookingData from sessionStorage (fallback to localStorage.cart)
+      let bookingData = JSON.parse(sessionStorage.getItem('bookingData') || 'null');
+      if(!bookingData) {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const urlParams = new URLSearchParams(window.location.search);
+        const movieId = urlParams.get('movieId');
+        bookingData = cart.find(item => (item.movieId && item.movieId === movieId) || (item.tourId && item.tourId === movieId));
+      }
+
+      if(!bookingData) {
+        alert('Không tìm thấy thông tin đặt vé. Vui lòng chọn lại ghế.');
+        window.location.href = '/';
+        return;
+      }
+
+      document.getElementById('cinema').textContent = bookingData.cinema || '--';
+      document.getElementById('date').textContent = bookingData.showtimeDate || '--';
+      document.getElementById('time').textContent = bookingData.showtimeTime || '--';
+      document.getElementById('seats').textContent = bookingData.seats ? bookingData.seats.join(', ') : '--';
+
+      const ticketPrice = bookingData.ticketPrice || 0;
+      document.getElementById('ticketPrice').textContent = ticketPrice.toLocaleString('vi-VN') + 'đ';
+
+      const combos = bookingData.combos || {};
+      let comboTotal = 0;
+      Object.keys(combos).forEach(k => {
+        const c = combos[k];
+        comboTotal += (c.price || 0) * (c.quantity || 0);
+      });
+      document.getElementById('comboPrice').textContent = comboTotal.toLocaleString('vi-VN') + 'đ';
+
+      const total = ticketPrice + comboTotal;
+      document.getElementById('totalPrice').textContent = total.toLocaleString('vi-VN') + 'đ';
+
+      document.getElementById('btnPay').addEventListener('click', function() {
+        const payload = {
+          movieId: bookingData.movieId || bookingData.tourId,
+          cinema: bookingData.cinema,
+          showtimeDate: bookingData.showtimeDate,
+          showtimeTime: bookingData.showtimeTime,
+          seats: bookingData.seats,
+          combos: bookingData.combos,
+          fullName: document.getElementById('fullName').value,
+          phone: document.getElementById('phone').value,
+          email: document.getElementById('email').value,
+          note: document.getElementById('note').value,
+          paymentMethod: document.getElementById('paymentMethod').value
+        };
+
+        fetch('/booking/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code === 'success') {
+            // Remove from localStorage/cart
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cart = cart.filter(item => !(item.movieId === (bookingData.movieId || bookingData.tourId)));
+            localStorage.setItem('cart', JSON.stringify(cart));
+            sessionStorage.removeItem('bookingData');
+
+            // Redirect to success page
+            window.location.href = `/booking/success?bookingId=${data.bookingId}&phone=${payload.phone}`;
+          } else {
+            alert(data.message || 'Đặt vé thất bại');
+          }
+        })
+        .catch(err => {
+          alert('Lỗi kết nối');
+        });
+      });
+    });

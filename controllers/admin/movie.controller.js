@@ -2,6 +2,7 @@ const moment = require("moment");
 const Category = require("../../models/category.model");
 const Cinema = require("../../models/cinema.model");
 const Movie = require("../../models/movie.model");
+const Booking = require("../../models/booking.model");
 const AccountAdmin = require("../../models/account-admin.model");
 const categoryHelper = require("../../helpers/category.helper");
 const { default: slugify } = require("slugify");
@@ -333,3 +334,138 @@ module.exports.changeMultiPatch = async (req, res) => {
     })
   }
 }
+
+// Chi tiết phim
+module.exports.detail = async (req, res) => {
+  const slug = req.params.slug;
+
+  const movieDetail = await Movie.findOne({
+    slug: slug,
+    status: "active",
+    deleted: false
+  });
+
+  if(movieDetail) {
+    // Breadcrumb
+    const breadcrumb = {
+      image: movieDetail.avatar,
+      title: movieDetail.name,
+      list: [
+        {
+          link: "/",
+          title: "Trang Chủ"
+        }
+      ]
+    };
+
+    const category = await Category.findOne({
+      _id: movieDetail.category,
+      deleted: false,
+      status: "active"
+    });
+
+    if(category) {
+      if(category.parent) {
+        const parentCategory = await Category.findOne({
+          _id: category.parent,
+          deleted: false,
+          status: "active"
+        });
+
+        if(parentCategory) {
+          breadcrumb.list.push({
+            link: `/category/${parentCategory.slug}`,
+            title: parentCategory.name
+          });
+        }
+      }
+
+      breadcrumb.list.push({
+        link: `/category/${category.slug}`,
+        title: category.name,
+      });
+    }
+
+    breadcrumb.list.push({
+      link: `/movie/detail/${slug}`,
+      title: movieDetail.name
+    });
+
+    // Format dữ liệu
+    movieDetail.releaseDateFormat = moment(movieDetail.releaseDate).format("DD/MM/YYYY");
+
+    // Lấy danh sách rạp
+    const cinemaList = await Cinema.find({ status: "active" });
+
+    // Format lịch chiếu
+    if(movieDetail.showtimes) {
+      movieDetail.showtimes.forEach(showtime => {
+        showtime.dateFormat = moment(showtime.date).format("DD/MM/YYYY");
+        showtime.dayOfWeek = moment(showtime.date).format("dddd");
+      });
+    }
+
+    // Lấy thông tin sơ đồ ghế
+    const seatMap = movieDetail.seatMap || {
+      rows: 12,
+      columns: 15,
+      vipRows: ['H', 'I', 'J', 'K'],
+      coupleRows: ['L'],
+      bookedSeats: []
+    };
+
+    res.render("client/pages/movie-detail", {
+      pageTitle: movieDetail.name,
+      breadcrumb: breadcrumb,
+      movieDetail: movieDetail,
+      cinemaList: cinemaList,
+      seatMap: seatMap
+    });
+  } else {
+    res.redirect("/");
+  }
+};
+
+// Lấy danh sách ghế đã đặt
+module.exports.getBookedSeats = async (req, res) => {
+  try {
+    const { movieId, cinema, date, time } = req.query;
+    
+    const movie = await Movie.findById(movieId);
+    
+    if(!movie) {
+      return res.json({
+        code: "error",
+        message: "Phim không tồn tại"
+      });
+    }
+
+    // Lấy danh sách ghế đã đặt từ các booking đã confirm
+    const bookings = await Booking.find({
+      movieId: movieId,
+      cinema: cinema,
+      "showtime.date": new Date(date),
+      "showtime.time": time,
+      status: { $in: ["initial", "confirmed"] },
+      deleted: false
+    });
+
+    const bookedSeats = [];
+    bookings.forEach(booking => {
+      booking.seats.forEach(seat => {
+        bookedSeats.push(seat.seatNumber);
+      });
+    });
+
+    res.json({
+      code: "success",
+      bookedSeats: bookedSeats
+    });
+
+  } catch (error) {
+    res.json({
+      code: "error",
+      message: "Lỗi khi lấy thông tin ghế"
+    });
+  }
+};

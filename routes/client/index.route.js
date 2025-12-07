@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const homeRoutes = require("./home.route");
 const movieRoutes = require("./movie.route");
-const cartRoutes = require("./cart.route");
 const contactRoutes = require("./contact.route");
 const categoryRoutes = require("./category.route");
 const searchRoutes = require("./search.route");
@@ -20,7 +19,6 @@ router.use(userAuthMiddleware.checkUserLogin);
 
 router.use('/', homeRoutes);
 router.use('/movie', movieRoutes);
-router.use('/cart', cartRoutes);
 router.use('/contact', contactRoutes);
 router.use('/category', categoryRoutes);
 router.use('/search', searchRoutes);

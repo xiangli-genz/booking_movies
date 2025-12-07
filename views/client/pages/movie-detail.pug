@@ -10,6 +10,26 @@ block main
       .booking-layout
         // Left: Seat Map
         .seat-section
+          // Cinema, Date, Time Selection
+          .booking-info
+            .info-group
+              label Chọn rạp chiếu
+              select#cinema-select(name="cinema")
+                each cinema in cinemaList
+                  option(value=cinema.name) #{cinema.name}
+            
+            .info-group
+              label Chọn ngày chiếu
+              select#date-select(name="showtimeDate")
+                if movieDetail.showtimes
+                  each showtime in movieDetail.showtimes
+                    option(value=showtime.date data-format=showtime.format) #{showtime.dateFormat} - #{showtime.dayOfWeek}
+            
+            .info-group
+              label Chọn suất chiếu
+              select#time-select(name="showtimeTime")
+                option(value="") -- Chọn giờ chiếu --
+          
           // Legend
           .seat-legend-top
             .legend-item
@@ -17,11 +37,7 @@ block main
             .legend-item
               .legend-icon.seat-selecting Ghế đang chọn
             .legend-item
-              .legend-icon.seat-selected Ghế đang được giữ
-            .legend-item
-              .legend-icon.seat-sold Ghế đã bán
-            .legend-item
-              .legend-icon.seat-booked Ghế đặt trước
+              .legend-icon.seat-booked Ghế đã đặt
           
           // Screen
           .screen-wrapper
@@ -39,8 +55,19 @@ block main
                 each val, colIndex in Array(seatsPerRow)
                   - const seatNumber = row + (colIndex + 1)
                   - let seatClass = 'seat-normal'
-                  - if (vipRows.includes(row)) seatClass = 'seat-vip'
-                  - if (coupleRows.includes(row)) seatClass = 'seat-couple'
+                  - let seatType = 'standard'
+                  - let seatPrice = movieDetail.prices ? movieDetail.prices.standard : 50000
+                  
+                  - if (vipRows.includes(row)) {
+                  -   seatClass = 'seat-vip'
+                  -   seatType = 'vip'
+                  -   seatPrice = movieDetail.prices ? movieDetail.prices.vip : 60000
+                  - }
+                  - if (coupleRows.includes(row)) {
+                  -   seatClass = 'seat-couple'
+                  -   seatType = 'couple'
+                  -   seatPrice = movieDetail.prices ? movieDetail.prices.couple : 110000
+                  - }
                   
                   if coupleRows.includes(row) && colIndex % 2 === 0
                     - const coupleNum = row + (colIndex + 1) + '-' + row + (colIndex + 2)
@@ -48,15 +75,15 @@ block main
                       class=seatClass
                       data-seat=coupleNum
                       data-type='couple'
-                      data-price=(movieDetail.prices ? movieDetail.prices.couple : 110000)
+                      data-price=seatPrice
                       style="min-width: 70px;"
                     ) #{coupleNum}
                   else if !coupleRows.includes(row)
                     .seat(
                       class=seatClass
                       data-seat=seatNumber
-                      data-type=(vipRows.includes(row) ? 'vip' : 'standard')
-                      data-price=(vipRows.includes(row) ? (movieDetail.prices ? movieDetail.prices.vip : 60000) : (movieDetail.prices ? movieDetail.prices.standard : 50000))
+                      data-type=seatType
+                      data-price=seatPrice
                     ) #{seatNumber}
           
           // Bottom Legend
@@ -68,12 +95,13 @@ block main
                 .seat.seat-vip Ghế VIP
               .legend-item-bottom
                 .seat.seat-couple(style="min-width: 70px;") Ghế đôi
+            .price-info
               .total-section
                 .total-label Tổng tiền
                 .total-amount 0 vnđ
               .timer-section
-                .timer-label Thời gian còn lại
-                .timer-countdown 6:05
+                .timer-label Thời gian
+                .timer-countdown 10:00
         
         // Right: Movie Info
         .info-section
@@ -82,60 +110,68 @@ block main
           
           .movie-details
             h2.movie-title #{movieDetail.name}
-            .movie-subtitle #{movieDetail.ageRating || '2D'} Phụ đề
+            .movie-subtitle #{movieDetail.ageRating || 'P'} - #{movieDetail.language || 'Phụ đề'}
             
             .detail-row
               .detail-icon
                 i.fa-solid.fa-tags
-              .detail-label Thể loại
-              .detail-value Hoạt hình
+              .detail-content
+                .detail-label Thể loại
+                .detail-value #{movieDetail.category || 'Hành động'}
             
             .detail-row
               .detail-icon
                 i.fa-regular.fa-clock
-              .detail-label Thời lượng
-              .detail-value #{movieDetail.duration || '107 phút'}
+              .detail-content
+                .detail-label Thời lượng
+                .detail-value #{movieDetail.duration || '120 phút'}
+            
+            .detail-row
+              .detail-icon
+                i.fa-solid.fa-user-tie
+              .detail-content
+                .detail-label Đạo diễn
+                .detail-value #{movieDetail.director || 'Đang cập nhật'}
             
             hr.divider
             
             .detail-row
               .detail-icon
                 i.fa-solid.fa-building
-              .detail-label Rạp chiếu
-              .detail-value(location-display) Beta Thanh Xuân
+              .detail-content
+                .detail-label Rạp chiếu
+                .detail-value#cinema-display --
             
             .detail-row
               .detail-icon
                 i.fa-regular.fa-calendar
-              .detail-label Ngày chiếu
-              .detail-value(date-display) 07/12/2025
+              .detail-content
+                .detail-label Ngày chiếu
+                .detail-value#date-display --
             
             .detail-row
               .detail-icon
                 i.fa-regular.fa-clock
-              .detail-label Giờ chiếu
-              .detail-value(time-display) 20:15
+              .detail-content
+                .detail-label Giờ chiếu
+                .detail-value#time-display --
             
             .detail-row
               .detail-icon
-                i.fa-solid.fa-door-open
-              .detail-label Phòng chiếu
-              .detail-value P2
+                i.fa-solid.fa-film
+              .detail-content
+                .detail-label Định dạng
+                .detail-value#format-display --
             
             .detail-row
               .detail-icon
                 i.fa-solid.fa-couch
-              .detail-label Ghế ngồi
-              .detail-value(seats-display) -
+              .detail-content
+                .detail-label Ghế ngồi
+                .detail-value#seats-display --
             
             .continue-btn
-              button#btn-continue(tour-id=movieDetail.id) TIẾP TỤC
-
-  // Hidden inputs for booking data
-  input(type="hidden" name="cinema" location-from)
-  input(type="hidden" name="showtimeDate")
-  input(type="hidden" name="showtimeTime")
-  input(type="hidden" name="showtimeFormat")
+              button#btn-continue(data-movie-id=movieDetail.id) TIẾP TỤC
 
   style.
     .booking-container {
@@ -154,6 +190,31 @@ block main
       background: white;
       border-radius: 8px;
       padding: 20px;
+    }
+    
+    .booking-info {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .info-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .info-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
     }
     
     .seat-legend-top {
@@ -191,21 +252,10 @@ block main
       color: white;
     }
     
-    .legend-icon.seat-selected {
-      background: #64B5F6;
-      border: 2px solid #42A5F5;
-    }
-    
-    .legend-icon.seat-sold {
-      background: #EF5350;
-      border: 2px solid #E53935;
-      color: white;
-    }
-    
     .legend-icon.seat-booked {
-      background: #FFA726;
-      border: 2px solid #FB8C00;
-      color: white;
+      background: #757575;
+      border: 2px solid #616161;
+      color: #999;
     }
     
     .screen-wrapper {
@@ -266,9 +316,9 @@ block main
     }
     
     .seat-vip {
-      background: #EF5350;
-      border-color: #E53935;
-      color: white;
+      background: #FFD700;
+      border-color: #FFC700;
+      color: #333;
     }
     
     .seat-couple {
@@ -296,22 +346,16 @@ block main
     }
     
     .seat-legend-bottom {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       padding: 20px;
       background: #f9f9f9;
       border-radius: 6px;
-      flex-wrap: wrap;
-      gap: 15px;
     }
     
     .legend-row {
       display: flex;
       gap: 20px;
       align-items: center;
-      flex: 1;
-      flex-wrap: wrap;
+      margin-bottom: 15px;
     }
     
     .legend-item-bottom {
@@ -324,12 +368,18 @@ block main
       cursor: default;
     }
     
+    .price-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 15px;
+      border-top: 2px solid #ddd;
+    }
+    
     .total-section {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 0 15px;
-      border-left: 2px solid #ddd;
     }
     
     .total-label {
@@ -340,15 +390,13 @@ block main
     .total-amount {
       font-size: 18px;
       font-weight: 700;
-      color: #333;
+      color: #EF5350;
     }
     
     .timer-section {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 0 15px;
-      border-left: 2px solid #ddd;
     }
     
     .timer-label {
@@ -357,7 +405,7 @@ block main
     }
     
     .timer-countdown {
-      font-size: 28px;
+      font-size: 20px;
       font-weight: 700;
       color: #333;
     }
@@ -393,14 +441,14 @@ block main
     }
     
     .movie-subtitle {
-      font-size: 16px;
+      font-size: 14px;
       color: #666;
       margin-bottom: 20px;
     }
     
     .detail-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       margin-bottom: 12px;
       font-size: 14px;
@@ -409,11 +457,17 @@ block main
     .detail-icon {
       width: 24px;
       color: #2196F3;
+      margin-top: 2px;
+    }
+    
+    .detail-content {
+      flex: 1;
     }
     
     .detail-label {
-      color: #666;
-      min-width: 90px;
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 2px;
     }
     
     .detail-value {
@@ -444,10 +498,15 @@ block main
       transition: all 0.3s;
     }
     
-    .continue-btn button:hover {
+    .continue-btn button:hover:not(:disabled) {
       background: #1976D2;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+    }
+    
+    .continue-btn button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
     
     @media (max-width: 991.98px) {
@@ -458,6 +517,10 @@ block main
       .info-section {
         position: static;
       }
+      
+      .booking-info {
+        grid-template-columns: 1fr;
+      }
     }
 
   script.
@@ -466,36 +529,65 @@ block main
       let selectedSeats = [];
       let bookedSeats = [];
       let countdownTimer;
-      let timeRemaining = 365; // 6:05 = 365 seconds
+      let timeRemaining = 600; // 10 phút
       
-      // Get booking data from URL or default
-      const urlParams = new URLSearchParams(window.location.search);
-      const cinema = urlParams.get('cinema') || 'Beta Thanh Xuân';
-      const date = urlParams.get('date') || '2025-12-07';
-      const time = urlParams.get('time') || '20:15';
-      const format = urlParams.get('format') || '2D';
+      const cinemaSelect = document.getElementById('cinema-select');
+      const dateSelect = document.getElementById('date-select');
+      const timeSelect = document.getElementById('time-select');
+      const btnContinue = document.getElementById('btn-continue');
       
-      // Set hidden inputs
-      document.querySelector('[location-from]').value = cinema;
-      document.querySelector('[name="showtimeDate"]').value = date;
-      document.querySelector('[name="showtimeTime"]').value = time;
-      document.querySelector('[name="showtimeFormat"]').value = format;
+      // Showtimes data từ server
+      const showtimesData = !{JSON.stringify(movieDetail.showtimes || [])};
       
-      // Update display values
-      document.querySelector('[location-display]').textContent = cinema;
-      document.querySelector('[date-display]').textContent = new Date(date).toLocaleDateString('vi-VN');
-      document.querySelector('[time-display]').textContent = time;
+      // Update time options khi chọn ngày
+      dateSelect.addEventListener('change', function() {
+        const selectedDate = this.value;
+        timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+        
+        const showtime = showtimesData.find(st => st.date === selectedDate);
+        if (showtime && showtime.times) {
+          showtime.times.forEach(time => {
+            const option = document.createElement('option');
+            option.value = time;
+            option.textContent = time;
+            timeSelect.appendChild(option);
+          });
+        }
+        
+        updateDisplay();
+      });
       
-      // Load booked seats
-      loadBookedSeats();
+      // Update display khi thay đổi selection
+      cinemaSelect.addEventListener('change', updateDisplay);
+      timeSelect.addEventListener('change', function() {
+        updateDisplay();
+        loadBookedSeats();
+      });
       
-      // Start countdown
-      startCountdown();
+      function updateDisplay() {
+        const cinema = cinemaSelect.value;
+        const dateOption = dateSelect.options[dateSelect.selectedIndex];
+        const date = dateOption ? dateOption.text : '--';
+        const time = timeSelect.value || '--';
+        const format = dateOption ? dateOption.getAttribute('data-format') : '--';
+        
+        document.getElementById('cinema-display').textContent = cinema;
+        document.getElementById('date-display').textContent = date;
+        document.getElementById('time-display').textContent = time;
+        document.getElementById('format-display').textContent = format;
+      }
       
       async function loadBookedSeats() {
+        if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
+          return;
+        }
+        
         try {
-          const response = await fetch(`/booking/booked-seats?movieId=${movieId}&cinema=${encodeURIComponent(cinema)}&date=${date}&time=${encodeURIComponent(time)}`);
+          const response = await fetch(
+            `/movie/booked-seats?movieId=${movieId}&cinema=${encodeURIComponent(cinemaSelect.value)}&date=${dateSelect.value}&time=${encodeURIComponent(timeSelect.value)}`
+          );
           const data = await response.json();
+          
           if (data.code === 'success') {
             bookedSeats = data.bookedSeats || [];
             updateSeatDisplay();
@@ -503,6 +595,17 @@ block main
         } catch (error) {
           console.error('Error loading booked seats:', error);
         }
+      }
+      
+      function updateSeatDisplay() {
+        document.querySelectorAll('.seat').forEach(seat => {
+          const seatNumber = seat.getAttribute('data-seat');
+          if (bookedSeats.includes(seatNumber)) {
+            seat.classList.add('seat-booked');
+          } else {
+            seat.classList.remove('seat-booked');
+          }
+        });
       }
       
       function startCountdown() {
@@ -526,9 +629,13 @@ block main
       }
       
       // Seat selection
-      document.querySelectorAll('.seat:not(.seat-disabled)').forEach(seat => {
+      document.querySelectorAll('.seat').forEach(seat => {
         seat.addEventListener('click', function() {
           if (this.classList.contains('seat-booked')) return;
+          if (!timeSelect.value) {
+            alert('Vui lòng chọn suất chiếu trước!');
+            return;
+          }
           
           const seatNumber = this.getAttribute('data-seat');
           const index = selectedSeats.indexOf(seatNumber);
@@ -546,15 +653,6 @@ block main
         });
       });
       
-      function updateSeatDisplay() {
-        document.querySelectorAll('.seat').forEach(seat => {
-          const seatNumber = seat.getAttribute('data-seat');
-          if (bookedSeats.includes(seatNumber)) {
-            seat.classList.add('seat-booked');
-          }
-        });
-      }
-      
       function updateTotalPrice() {
         let total = 0;
         selectedSeats.forEach(seatNumber => {
@@ -569,31 +667,52 @@ block main
       }
       
       function updateSeatsDisplay() {
-        const display = document.querySelector('[seats-display]');
-        display.textContent = selectedSeats.length > 0 ? selectedSeats.join(', ') : '-';
+        const display = document.getElementById('seats-display');
+        display.textContent = selectedSeats.length > 0 ? selectedSeats.join(', ') : '--';
       }
       
       // Continue button
-      document.getElementById('btn-continue').addEventListener('click', function() {
+      btnContinue.addEventListener('click', function() {
+        if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
+          alert('Vui lòng chọn đầy đủ thông tin rạp, ngày và giờ chiếu!');
+          return;
+        }
+        
         if (selectedSeats.length === 0) {
           alert('Vui lòng chọn ít nhất 1 ghế!');
           return;
         }
         
-        const tourId = this.getAttribute('tour-id');
-        const locationFrom = document.querySelector('[location-from]').value;
+        const movieId = this.getAttribute('data-movie-id');
+        const cinema = cinemaSelect.value;
+        const dateOption = dateSelect.options[dateSelect.selectedIndex];
+        const date = dateSelect.value;
+        const time = timeSelect.value;
+        const format = dateOption.getAttribute('data-format');
         
+        // Lưu vào localStorage (giống booking-combo.pug đọc)
+        // Tính tiền vé hiện tại
+        let ticketPriceCalc = 0;
+        selectedSeats.forEach(seatNumber => {
+          const seatEl = document.querySelector(`[data-seat="${seatNumber}"]`);
+          if (seatEl) ticketPriceCalc += parseInt(seatEl.getAttribute('data-price')) || 0;
+        });
+
         const cartItem = {
-          tourId,
-          locationFrom,
+          movieId: movieId,
+          cinema: cinema,
+          showtimeDate: date,
+          showtimeTime: time,
+          showtimeFormat: format,
           seats: selectedSeats,
           combos: {},
-          checked: true
+          checked: true,
+          ticketPrice: ticketPriceCalc
         };
         
         let cart = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingIndex = cart.findIndex(item => 
-          item.tourId === tourId && item.locationFrom === locationFrom
+          item.movieId === movieId && item.cinema === cinema
         );
         
         if (existingIndex !== -1) {
@@ -603,8 +722,29 @@ block main
         }
         
         localStorage.setItem('cart', JSON.stringify(cart));
-        
-        // Redirect to combo selection page or cart
-        window.location.href = '/booking/combo';
+
+        // Đồng thời lưu bookingData vào sessionStorage để booking-combo.pug có thể đọc
+        const bookingData = {
+          movieId: movieId,
+          cinema: cinema,
+          showtimeDate: date,
+          showtimeTime: time,
+          showtimeFormat: format,
+          seats: selectedSeats,
+          combos: {},
+          ticketPrice: ticketPriceCalc
+        };
+        sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+        // Chuyển sang trang chọn combo
+        window.location.href = `/booking/combo?movieId=${movieId}`;
       });
+      
+      // Initialize
+      if (dateSelect.options.length > 1) {
+        dateSelect.selectedIndex = 1;
+        dateSelect.dispatchEvent(new Event('change'));
+      }
+      
+      startCountdown();
     });

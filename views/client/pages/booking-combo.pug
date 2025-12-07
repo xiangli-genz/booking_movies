@@ -1,7 +1,6 @@
 extends ../layouts/default.pug
 
 block main
-  // Booking Combo Page
   .booking-combo-container
     .container
       // Progress Steps
@@ -16,7 +15,7 @@ block main
         .step-arrow →
         .step.pending
           .step-number 3
-          .step-label Thanh toán
+          .step-label Xác nhận
       
       .booking-combo-layout
         // Left: Combo Selection
@@ -26,85 +25,25 @@ block main
             | Chọn Combo
           
           .combo-list
-            // Combo 1
-            .combo-card
-              .combo-image
-                img(src="https://via.placeholder.com/120x120?text=Combo+1" alt="Combo 1")
-              .combo-info
-                .combo-name Beta Combo 69oz
-                .combo-desc TIẾT KIỆM 28k!!! Gồm 1 Bắp (69oz) + 1 Nước có gaz (22oz)
-                .combo-price-row
-                  .combo-price
-                    span.price-old 73.000đ
-                    span.price-new 45.000đ
-                  .combo-controls
-                    button.btn-minus(data-combo="combo1") −
-                    input.combo-quantity(type="text" value="0" readonly data-combo="combo1")
-                    button.btn-plus(data-combo="combo1") +
-            
-            // Combo 2
-            .combo-card
-              .combo-image
-                img(src="https://via.placeholder.com/120x120?text=Combo+2" alt="Combo 2")
-              .combo-info
-                .combo-name Sweet Combo 60oz
-                .combo-desc TIẾT KIỆM 46k!!! Gồm 1 Bắp (60oz) + 2 Nước có gaz (22oz)
-                .combo-price-row
-                  .combo-price
-                    span.price-old 96.000đ
-                    span.price-new 50.000đ
-                  .combo-controls
-                    button.btn-minus(data-combo="combo2") −
-                    input.combo-quantity(type="text" value="0" readonly data-combo="combo2")
-                    button.btn-plus(data-combo="combo2") +
-            
-            // Combo 3
-            .combo-card
-              .combo-image
-                img(src="https://via.placeholder.com/120x120?text=Combo+3" alt="Combo 3")
-              .combo-info
-                .combo-name Combo See Me - Lộc xuân
-                .combo-desc Sét hủ ngày nắng: 1 Ly xoáy kèm nước cà phê sữa đá
-                .combo-price-row
-                  .combo-price
-                    span.price-old 103.000đ
-                    span.price-new 103.000đ
-                  .combo-controls
-                    button.btn-minus(data-combo="combo3") −
-                    input.combo-quantity(type="text" value="0" readonly data-combo="combo3")
-                    button.btn-plus(data-combo="combo3") +
-            
-            // Combo 4
-            .combo-card
-              .combo-image
-                img(src="https://via.placeholder.com/120x120?text=Combo+4" alt="Combo 4")
-              .combo-info
-                .combo-name Family Combo 69oz
-                .combo-desc TIẾT KIỆM 95k!!! Gồm 2 Bắp (69oz) + 4 Nước có gaz (22oz) + 2 Snack Oishi (80g)
-                .combo-price-row
-                  .combo-price
-                    span.price-old 190.000đ
-                    span.price-new 95.000đ
-                  .combo-controls
-                    button.btn-minus(data-combo="combo4") −
-                    input.combo-quantity(type="text" value="0" readonly data-combo="combo4")
-                    button.btn-plus(data-combo="combo4") +
-            
-            // Combo 5
-            .combo-card
-              .combo-image
-                img(src="https://via.placeholder.com/120x120?text=Combo+5" alt="Combo 5")
-              .combo-info
-                .combo-name Combo See Me - Xương Rồng
-                .combo-desc Lộc phát tài: 1 Ly xoáy kèm nước sữa dưỡng nhan
-                .combo-price-row
-                  .combo-price
-                    span.price-old 120.000đ
-                    span.price-new 120.000đ
-                  .combo-controls
-                    button.btn-minus(data-combo="combo5") −
-                    input.combo-quantity(type="text" value="0" readonly data-combo="combo5")
-                    button.btn-plus(data-combo="combo5") +
+            each combo in combos
+              .combo-card(data-combo-id=combo.id)
+                .combo-info
+                  .combo-name #{combo.name}
+                  .combo-desc #{combo.description}
+                  .combo-price-row
+                    .combo-price
+                      span.price-new #{combo.price.toLocaleString('vi-VN')}đ
+                    .combo-controls
+                      button.btn-minus(data-combo=combo.id) −
+                      input.combo-quantity(
+                        type="text" 
+                        value="0" 
+                        readonly 
+                        data-combo-input=combo.id
+                        data-combo-name=combo.name
+                        data-combo-price=combo.price
+                      )
+                      button.btn-plus(data-combo=combo.id) +
         
         // Right: Booking Summary
         .summary-section
@@ -114,54 +53,54 @@ block main
             
             .movie-details
               h3.movie-title #{movieDetail.name}
-              .movie-subtitle #{movieDetail.ageRating || '2D'} Phụ đề
+              .movie-subtitle #{movieDetail.ageRating || 'P'} - #{movieDetail.language || 'Phụ đề'}
               
               .detail-row
                 .detail-icon
                   i.fa-solid.fa-building
                 .detail-content
                   .detail-label Rạp chiếu
-                  .detail-value(id="cinema-display") Beta Thanh Xuân
+                  .detail-value#cinema-display --
               
               .detail-row
                 .detail-icon
                   i.fa-regular.fa-calendar
                 .detail-content
                   .detail-label Ngày chiếu
-                  .detail-value(id="date-display") 07/12/2025
+                  .detail-value#date-display --
               
               .detail-row
                 .detail-icon
                   i.fa-regular.fa-clock
                 .detail-content
                   .detail-label Giờ chiếu
-                  .detail-value(id="time-display") 20:15
+                  .detail-value#time-display --
               
               .detail-row
                 .detail-icon
                   i.fa-solid.fa-couch
                 .detail-content
                   .detail-label Ghế ngồi
-                  .detail-value(id="seats-display") A1, A2, A3
+                  .detail-value#seats-display --
           
           .price-summary
             h4.summary-title Chi Tiết Giá
             
             .price-row
               span Tiền vé
-              span(id="ticket-price") 150.000đ
+              span#ticket-price 0đ
             
             .price-row
               span Tiền combo
-              span(id="combo-price") 0đ
+              span#combo-price 0đ
             
             .price-row.total-row
               strong Tổng cộng
-              strong.total-amount(id="total-price") 150.000đ
+              strong.total-amount#total-price 0đ
           
           .action-buttons
             button.btn-back(onclick="history.back()") Quay lại
-            button.btn-continue(id="btn-continue" data-movie-id=movieDetail.id) Tiếp tục
+            button.btn-continue#btn-continue Tiếp tục
 
   style.
     .booking-combo-container {
@@ -170,7 +109,6 @@ block main
       min-height: 100vh;
     }
     
-    /* Progress Steps */
     .booking-steps {
       display: flex;
       align-items: center;
@@ -228,14 +166,12 @@ block main
       font-size: 24px;
     }
     
-    /* Layout */
     .booking-combo-layout {
       display: grid;
       grid-template-columns: 1fr 400px;
       gap: 20px;
     }
     
-    /* Combo Section */
     .combo-section {
       background: white;
       border-radius: 8px;
@@ -258,8 +194,6 @@ block main
     }
     
     .combo-card {
-      display: flex;
-      gap: 20px;
       padding: 20px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
@@ -269,26 +203,6 @@ block main
     .combo-card:hover {
       border-color: #2196F3;
       box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
-    }
-    
-    .combo-image {
-      width: 120px;
-      height: 120px;
-      flex-shrink: 0;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
-    .combo-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .combo-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
     }
     
     .combo-name {
@@ -303,25 +217,12 @@ block main
       color: #666;
       line-height: 1.5;
       margin-bottom: 15px;
-      flex: 1;
     }
     
     .combo-price-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    
-    .combo-price {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .price-old {
-      font-size: 14px;
-      color: #999;
-      text-decoration: line-through;
     }
     
     .price-new {
@@ -369,7 +270,6 @@ block main
       font-weight: 600;
     }
     
-    /* Summary Section */
     .summary-section {
       display: flex;
       flex-direction: column;
@@ -512,7 +412,6 @@ block main
       box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
     }
     
-    /* Responsive */
     @media (max-width: 991.98px) {
       .booking-combo-layout {
         grid-template-columns: 1fr;
@@ -521,86 +420,35 @@ block main
       .summary-section {
         position: static;
       }
-      
-      .booking-steps {
-        overflow-x: auto;
-      }
-    }
-    
-    @media (max-width: 575.98px) {
-      .combo-card {
-        flex-direction: column;
-      }
-      
-      .combo-image {
-        width: 100%;
-        height: 200px;
-      }
-      
-      .action-buttons {
-        grid-template-columns: 1fr;
-      }
     }
 
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      // Combo data với giá
-      const combos = {
-        combo1: { name: 'Beta Combo 69oz', price: 45000 },
-        combo2: { name: 'Sweet Combo 60oz', price: 50000 },
-        combo3: { name: 'Combo See Me - Lộc xuân', price: 103000 },
-        combo4: { name: 'Family Combo 69oz', price: 95000 },
-        combo5: { name: 'Combo See Me - Xương Rồng', price: 120000 }
-      };
+      // Lấy dữ liệu booking từ sessionStorage
+      const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || '{}');
       
-      // Lấy dữ liệu từ giỏ hàng
-      let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-      const movieId = document.getElementById('btn-continue').getAttribute('data-movie-id');
-      
-      // Tìm booking hiện tại
-      let currentBooking = cart.find(item => item.tourId === movieId);
-      
-      if (!currentBooking) {
+      if (!bookingData.movieId || !bookingData.seats) {
         alert('Không tìm thấy thông tin đặt vé. Vui lòng chọn ghế lại.');
-        window.location.href = '/movie/detail/' + movieId;
+        window.location.href = '/';
         return;
       }
       
       // Hiển thị thông tin booking
-      document.getElementById('cinema-display').textContent = currentBooking.locationFrom || 'Beta Thanh Xuân';
-      document.getElementById('seats-display').textContent = currentBooking.seats ? currentBooking.seats.join(', ') : '-';
+      document.getElementById('cinema-display').textContent = bookingData.cinema || '--';
+      document.getElementById('date-display').textContent = bookingData.showtimeDate ? 
+        new Date(bookingData.showtimeDate).toLocaleDateString('vi-VN') : '--';
+      document.getElementById('time-display').textContent = bookingData.showtimeTime || '--';
+      document.getElementById('seats-display').textContent = bookingData.seats.join(', ');
       
-      // Tính tiền vé (giả sử có sẵn từ session trước)
-      let ticketPrice = 0;
-      if (currentBooking.seats && currentBooking.seats.length > 0) {
-        // Tính toán dựa trên loại ghế (standard: 50k, vip: 60k, couple: 110k)
-        currentBooking.seats.forEach(seat => {
-          if (seat.includes('V')) ticketPrice += 60000;
-          else if (seat.includes('C')) ticketPrice += 110000;
-          else ticketPrice += 50000;
-        });
-      }
-      
+      // Tính tiền vé từ giá đã lưu trong booking
+      let ticketPrice = bookingData.ticketPrice || 0;
       document.getElementById('ticket-price').textContent = ticketPrice.toLocaleString('vi-VN') + 'đ';
-      
-      // Khởi tạo combo từ giỏ hàng nếu có
-      if (currentBooking.combos) {
-        Object.keys(currentBooking.combos).forEach(comboKey => {
-          const qty = currentBooking.combos[comboKey]?.quantity || 0;
-          if (qty > 0) {
-            const input = document.querySelector(`[data-combo="${comboKey}"]`);
-            if (input && input.classList.contains('combo-quantity')) {
-              input.value = qty;
-            }
-          }
-        });
-      }
       
       // Xử lý tăng/giảm combo
       document.querySelectorAll('.btn-plus').forEach(btn => {
         btn.addEventListener('click', function() {
-          const comboKey = this.getAttribute('data-combo');
-          const input = document.querySelector(`.combo-quantity[data-combo="${comboKey}"]`);
+          const comboId = this.getAttribute('data-combo');
+          const input = document.querySelector(`[data-combo-input="${comboId}"]`);
           let qty = parseInt(input.value) || 0;
           qty++;
           input.value = qty;
@@ -610,8 +458,8 @@ block main
       
       document.querySelectorAll('.btn-minus').forEach(btn => {
         btn.addEventListener('click', function() {
-          const comboKey = this.getAttribute('data-combo');
-          const input = document.querySelector(`.combo-quantity[data-combo="${comboKey}"]`);
+          const comboId = this.getAttribute('data-combo');
+          const input = document.querySelector(`[data-combo-input="${comboId}"]`);
           let qty = parseInt(input.value) || 0;
           if (qty > 0) {
             qty--;
@@ -621,15 +469,14 @@ block main
         });
       });
       
-      // Cập nhật giá combo
       function updateComboPrice() {
         let comboTotal = 0;
         
-        Object.keys(combos).forEach(comboKey => {
-          const input = document.querySelector(`.combo-quantity[data-combo="${comboKey}"]`);
+        document.querySelectorAll('[data-combo-input]').forEach(input => {
           const qty = parseInt(input.value) || 0;
+          const price = parseInt(input.getAttribute('data-combo-price')) || 0;
           if (qty > 0) {
-            comboTotal += combos[comboKey].price * qty;
+            comboTotal += price * qty;
           }
         });
         
@@ -647,27 +494,23 @@ block main
         // Thu thập dữ liệu combo
         const selectedCombos = {};
         
-        Object.keys(combos).forEach(comboKey => {
-          const input = document.querySelector(`.combo-quantity[data-combo="${comboKey}"]`);
+        document.querySelectorAll('[data-combo-input]').forEach(input => {
           const qty = parseInt(input.value) || 0;
           if (qty > 0) {
-            selectedCombos[comboKey] = {
-              name: combos[comboKey].name,
-              price: combos[comboKey].price,
+            const comboId = input.getAttribute('data-combo-input');
+            selectedCombos[comboId] = {
+              name: input.getAttribute('data-combo-name'),
+              price: parseInt(input.getAttribute('data-combo-price')),
               quantity: qty
             };
           }
         });
         
-        // Cập nhật giỏ hàng
-        const cartIndex = cart.findIndex(item => item.tourId === movieId);
-        if (cartIndex !== -1) {
-          cart[cartIndex].combos = selectedCombos;
-        }
+        // Cập nhật booking data
+        bookingData.combos = selectedCombos;
+        sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
         
-        localStorage.setItem('cart', JSON.stringify(cart));
-        
-        // Chuyển sang trang giỏ hàng
-        window.location.href = '/cart';
+        // Chuyển sang trang xác nhận (cart hoặc checkout)
+        window.location.href = '/booking/checkout';
       });
     });

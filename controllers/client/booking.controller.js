@@ -1,6 +1,7 @@
 const Movie = require("../../models/movie.model");
 const Booking = require("../../models/booking.model");
 const Cinema = require("../../models/cinema.model");
+const variableConfig = require("../../config/variable");
 
 const generateHelper = require("../../helpers/generate.helper");
 const moment = require("moment");
@@ -213,10 +214,44 @@ module.exports.getBookedSeats = async (req, res) => {
 
 module.exports.combo = async (req, res) => {
   try {
+    const { movieId } = req.query;
+    
+    if (!movieId) {
+      res.redirect("/");
+      return;
+    }
+    
+    const movie = await Movie.findOne({
+      _id: movieId,
+      status: "active",
+      deleted: false
+    });
+    
+    if (!movie) {
+      res.redirect("/");
+      return;
+    }
+    
+    // Lấy danh sách combo từ config
+    const combos = variableConfig.defaultCombos || [];
+    
     res.render("client/pages/booking-combo", {
-      pageTitle: "Chọn Combo"
+      pageTitle: "Chọn Combo",
+      movieDetail: movie,
+      combos: combos
     });
   } catch (error) {
     res.redirect("/");
   }
-}
+};
+
+module.exports.checkout = async (req, res) => {
+  try {
+    // Checkout page will read bookingData from sessionStorage/localStorage on client side
+    res.render('client/pages/booking-checkout', {
+      pageTitle: 'Xác nhận & Thanh toán'
+    });
+  } catch (error) {
+    res.redirect('/');
+  }
+};
