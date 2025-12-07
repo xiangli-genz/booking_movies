@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const bookingController = require("../../controllers/client/booking.controller");
 
+router.get('/combo', bookingController.combo);
+
 router.post('/create', bookingController.createPost);
 
 router.get('/success', bookingController.success);

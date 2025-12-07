@@ -210,3 +210,13 @@ module.exports.getBookedSeats = async (req, res) => {
     });
   }
 }
+
+module.exports.combo = async (req, res) => {
+  try {
+    res.render("client/pages/booking-combo", {
+      pageTitle: "Chọn Combo"
+    });
+  } catch (error) {
+    res.redirect("/");
+  }
+}
