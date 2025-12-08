@@ -414,11 +414,24 @@ module.exports.bookings = async (req, res) => {
     const Booking = require("../../models/booking.model");
     const moment = require("moment");
     
-    // Lấy bookings theo số điện thoại của user
-    const bookings = await Booking.find({
-      phone: req.user.phone,
-      deleted: false
-    }).sort({
+    // Lấy bookings theo userId (nếu đã đăng nhập) hoặc phone
+    let query = { deleted: false };
+    
+    if (req.user && req.user.id) {
+      // Nếu user đã đăng nhập, lấy theo userId hoặc phone
+      query.$or = [
+        { userId: req.user.id },
+        { phone: req.user.phone }
+      ];
+    } else if (req.user && req.user.phone) {
+      // Fallback: chỉ theo phone
+      query.phone = req.user.phone;
+    } else {
+      // Không có user info, redirect về login
+      return res.redirect('/user/login');
+    }
+    
+    const bookings = await Booking.find(query).sort({
       createdAt: "desc"
     });
 
@@ -441,7 +454,17 @@ module.exports.bookings = async (req, res) => {
       }[booking.status] || booking.status;
 
       booking.createdAtFormat = moment(booking.createdAt).format("HH:mm - DD/MM/YYYY");
-      booking.showtimeDateFormat = moment(booking.showtime.date).format("DD/MM/YYYY");
+      
+      // FIX: Safely format showtime date
+      if (booking.showtime && booking.showtime.date) {
+        try {
+          booking.showtimeDateFormat = moment(booking.showtime.date).format("DD/MM/YYYY");
+        } catch(e) {
+          booking.showtimeDateFormat = "--";
+        }
+      } else {
+        booking.showtimeDateFormat = "--";
+      }
     }
 
     res.render("client/pages/user-bookings", {

@@ -1,7 +1,8 @@
+// controllers/admin/dashboard.controller.js
 const AccountAdmin = require("../../models/account-admin.model");
 const Booking = require("../../models/booking.model");
 const User = require("../../models/user.model");
-const variableConfig = require("../../config/variable");
+const moment = require("moment");
 
 module.exports.dashboard = async (req, res) => {
   // Section 1 - Overview
@@ -51,6 +52,9 @@ module.exports.dashboard = async (req, res) => {
     } else {
       booking.comboList = "Không có";
     }
+    
+    // Format dates
+    booking.createdAtFormat = moment(booking.createdAt).format("HH:mm - DD/MM/YYYY");
   }
 
   res.render("admin/pages/dashboard", {

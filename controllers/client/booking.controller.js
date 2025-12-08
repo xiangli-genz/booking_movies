@@ -10,7 +10,7 @@ const moment = require("moment");
 module.exports.createPost = async (req, res) => {
   try {
     // Tạo mã booking
-    req.body.bookingCode = "BK" + generateHelper.generateRandomNumber(10);
+    const bookingCode = "BK" + generateHelper.generateRandomNumber(10);
     
     const { movieId, cinema, showtimeDate, showtimeTime, showtimeFormat, seats, combos, fullName, phone, email, note, paymentMethod } = req.body;
     
@@ -102,10 +102,18 @@ module.exports.createPost = async (req, res) => {
     // Tổng thanh toán
     const total = subTotal + comboTotal - discount;
 
-    // Chuyển đổi ngày chiếu sang Date object
+    // Chuyển đổi ngày chiếu sang Date object - FIX CAST ERROR
     let showtimeDateObj;
     try {
-      showtimeDateObj = new Date(showtimeDate);
+      // Nếu showtimeDate đã là Date object
+      if (showtimeDate instanceof Date) {
+        showtimeDateObj = showtimeDate;
+      } else {
+        // Nếu là string, parse nó
+        showtimeDateObj = new Date(showtimeDate);
+      }
+      
+      // Kiểm tra valid date
       if (isNaN(showtimeDateObj.getTime())) {
         throw new Error("Invalid date");
       }
@@ -118,7 +126,7 @@ module.exports.createPost = async (req, res) => {
 
     // Lưu thông tin đặt vé
     const newBooking = new Booking({
-      bookingCode: req.body.bookingCode,
+      bookingCode: bookingCode,
       fullName: fullName,
       phone: phone,
       email: email || "",
@@ -140,7 +148,9 @@ module.exports.createPost = async (req, res) => {
       total: total,
       paymentMethod: paymentMethod || "money",
       paymentStatus: "unpaid",
-      status: "initial"
+      status: "initial",
+      // Thêm userId nếu user đã đăng nhập
+      userId: req.user ? req.user.id : null
     });
 
     await newBooking.save();

@@ -140,11 +140,11 @@ block main
         .summary-section
           .movie-info-card
             .movie-poster
-              img#movie-poster(src="" alt="")
+              img(src=movieDetail.avatar alt=movieDetail.name)
             
             .movie-details
-              h3.movie-title#movie-title --
-              .movie-subtitle#movie-subtitle --
+              h3.movie-title #{movieDetail.name}
+              .movie-subtitle #{movieDetail.ageRating || 'P'} - #{movieDetail.language || 'Phụ đề'}
               
               .detail-row
                 .detail-icon
@@ -685,8 +685,21 @@ block main
       
       // Hiển thị thông tin booking
       document.getElementById('cinema-display').textContent = bookingData.cinema || '--';
-      document.getElementById('date-display').textContent = bookingData.showtimeDate ? 
-        new Date(bookingData.showtimeDate).toLocaleDateString('vi-VN') : '--';
+      
+      // FIX: Format date properly
+      let dateDisplay = '--';
+      if (bookingData.showtimeDate) {
+        try {
+          const dateObj = new Date(bookingData.showtimeDate);
+          if (!isNaN(dateObj.getTime())) {
+            dateDisplay = dateObj.toLocaleDateString('vi-VN');
+          }
+        } catch(e) {
+          console.error('Date format error:', e);
+        }
+      }
+      document.getElementById('date-display').textContent = dateDisplay;
+      
       document.getElementById('time-display').textContent = bookingData.showtimeTime || '--';
       document.getElementById('format-display').textContent = bookingData.showtimeFormat || '--';
       document.getElementById('seats-display').textContent = bookingData.seats.join(', ');
@@ -720,7 +733,7 @@ block main
         });
       }
       
-      const discount = 0; // Có thể thêm logic giảm giá ở đây
+      const discount = 0;
       const total = ticketPrice + comboTotal - discount;
       
       document.getElementById('ticket-price').textContent = ticketPrice.toLocaleString('vi-VN') + 'đ';
@@ -788,11 +801,28 @@ block main
           return;
         }
         
+        // FIX: Ensure showtimeDate is in ISO format
+        let showtimeDateISO;
+        try {
+          if (bookingData.showtimeDate instanceof Date) {
+            showtimeDateISO = bookingData.showtimeDate.toISOString();
+          } else {
+            const dateObj = new Date(bookingData.showtimeDate);
+            if (isNaN(dateObj.getTime())) {
+              throw new Error('Invalid date');
+            }
+            showtimeDateISO = dateObj.toISOString();
+          }
+        } catch(e) {
+          alert('Ngày chiếu không hợp lệ!');
+          return;
+        }
+        
         // Tạo payload
         const payload = {
           movieId: bookingData.movieId || bookingData.tourId,
           cinema: bookingData.cinema,
-          showtimeDate: bookingData.showtimeDate,
+          showtimeDate: showtimeDateISO, // FIX: Send ISO string
           showtimeTime: bookingData.showtimeTime,
           showtimeFormat: bookingData.showtimeFormat,
           seats: bookingData.seats,
@@ -833,7 +863,6 @@ block main
             if (paymentMethod === 'zalopay') {
               window.location.href = `/booking/payment-zalopay?bookingId=${data.bookingId}`;
             } else if (paymentMethod === 'momo') {
-              // Tương tự ZaloPay (nếu có tích hợp)
               window.location.href = `/booking/success?bookingId=${data.bookingId}&phone=${phone}`;
             } else {
               // Thanh toán tiền mặt hoặc chuyển khoản

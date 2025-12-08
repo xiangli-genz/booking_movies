@@ -686,11 +686,30 @@ block main
         const movieId = this.getAttribute('data-movie-id');
         const cinema = cinemaSelect.value;
         const dateOption = dateSelect.options[dateSelect.selectedIndex];
-        const date = dateSelect.value;
+        
+        // FIX: Ensure date is properly formatted
+        let dateValue = dateSelect.value;
+        let dateISO;
+        
+        try {
+          // Parse the date value
+          const dateObj = new Date(dateValue);
+          
+          // Check if valid
+          if (isNaN(dateObj.getTime())) {
+            throw new Error('Invalid date');
+          }
+          
+          // Convert to ISO string for storage
+          dateISO = dateObj.toISOString();
+        } catch(e) {
+          alert('Ngày chiếu không hợp lệ!');
+          return;
+        }
+        
         const time = timeSelect.value;
         const format = dateOption.getAttribute('data-format');
         
-        // Lưu vào localStorage (giống booking-combo.pug đọc)
         // Tính tiền vé hiện tại
         let ticketPriceCalc = 0;
         selectedSeats.forEach(seatNumber => {
@@ -701,7 +720,7 @@ block main
         const cartItem = {
           movieId: movieId,
           cinema: cinema,
-          showtimeDate: date,
+          showtimeDate: dateISO, // Use ISO string
           showtimeTime: time,
           showtimeFormat: format,
           seats: selectedSeats,
@@ -723,11 +742,11 @@ block main
         
         localStorage.setItem('cart', JSON.stringify(cart));
 
-        // Đồng thời lưu bookingData vào sessionStorage để booking-combo.pug có thể đọc
+        // Đồng thời lưu bookingData vào sessionStorage
         const bookingData = {
           movieId: movieId,
           cinema: cinema,
-          showtimeDate: date,
+          showtimeDate: dateISO, // Use ISO string
           showtimeTime: time,
           showtimeFormat: format,
           seats: selectedSeats,
@@ -739,12 +758,4 @@ block main
         // Chuyển sang trang chọn combo
         window.location.href = `/booking/combo?movieId=${movieId}`;
       });
-      
-      // Initialize
-      if (dateSelect.options.length > 1) {
-        dateSelect.selectedIndex = 1;
-        dateSelect.dispatchEvent(new Event('change'));
-      }
-      
-      startCountdown();
-    });
+          });
