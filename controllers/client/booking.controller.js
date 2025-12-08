@@ -14,10 +14,16 @@ module.exports.createPost = async (req, res) => {
     
     let { movieId, cinema, showtimeDate, showtimeTime, showtimeFormat, seats, combos, fullName, phone, email, note, paymentMethod } = req.body;
     
-    // ===== FIX: Parse seats nếu là string =====
+    // ===== FIX CHÍNH: Parse seats ĐÚNG CÁCH =====
+    console.log('=== DEBUG SEATS ===');
+    console.log('Raw seats:', seats);
+    console.log('Type:', typeof seats);
+    
+    // Nếu seats là string, parse nó
     if (typeof seats === 'string') {
       try {
         seats = JSON.parse(seats);
+        console.log('After parse:', seats);
       } catch (e) {
         console.error('Error parsing seats:', e);
         return res.json({
@@ -27,7 +33,73 @@ module.exports.createPost = async (req, res) => {
       }
     }
     
-    // ===== FIX: Parse combos nếu là string =====
+    // Kiểm tra seats có phải array không
+    if (!Array.isArray(seats)) {
+      console.error('Seats is not array:', seats);
+      return res.json({
+        code: "error",
+        message: "Dữ liệu ghế phải là danh sách!"
+      });
+    }
+    
+    // Chuẩn hóa seats - đảm bảo là array of objects
+    const seatDetails = seats.map(seat => {
+      // Nếu seat là object hợp lệ
+      if (typeof seat === 'object' && seat !== null && seat.seatNumber) {
+        return {
+          seatNumber: seat.seatNumber,
+          type: seat.type || 'standard',
+          price: parseInt(seat.price) || 50000
+        };
+      }
+      
+      // Nếu seat là string (fallback)
+      if (typeof seat === 'string') {
+        // Thử parse nếu là JSON string
+        try {
+          const parsed = JSON.parse(seat);
+          if (parsed.seatNumber) {
+            return {
+              seatNumber: parsed.seatNumber,
+              type: parsed.type || 'standard',
+              price: parseInt(parsed.price) || 50000
+            };
+          }
+        } catch(e) {
+          // Không phải JSON, xử lý như string thuần
+        }
+        
+        // Xác định type dựa vào ký tự đầu
+        let type = 'standard';
+        let price = 50000;
+        
+        if (seat.startsWith('V')) {
+          type = 'vip';
+          price = 60000;
+        } else if (seat.startsWith('C') || seat.includes('-')) {
+          type = 'couple';
+          price = 110000;
+        }
+        
+        return { seatNumber: seat, type: type, price: price };
+      }
+      
+      console.error('Invalid seat format:', seat);
+      return null;
+    }).filter(Boolean);
+    
+    console.log('Final seatDetails:', seatDetails);
+    console.log('==================');
+    
+    if (seatDetails.length === 0) {
+      return res.json({
+        code: "error",
+        message: "Không có ghế hợp lệ!"
+      });
+    }
+    // ============================================
+    
+    // Parse combos nếu là string
     if (typeof combos === 'string') {
       try {
         combos = JSON.parse(combos);
@@ -36,10 +108,9 @@ module.exports.createPost = async (req, res) => {
         combos = {};
       }
     }
-    // ==========================================
     
-    // Validate dữ liệu đầu vào
-    if (!movieId || !cinema || !showtimeDate || !showtimeTime || !seats || seats.length === 0) {
+    // Validate
+    if (!movieId || !cinema || !showtimeDate || !showtimeTime) {
       return res.json({
         code: "error",
         message: "Thiếu thông tin đặt vé bắt buộc!"
@@ -67,68 +138,11 @@ module.exports.createPost = async (req, res) => {
       });
     }
 
-    // ===== FIX: Xử lý seats - hỗ trợ cả array of strings và array of objects =====
+    // Tính tổng tiền vé
     let subTotal = 0;
-    const seatDetails = [];
-    
-    // Đảm bảo seats là array
-    if (!Array.isArray(seats)) {
-      console.error('Seats is not an array after parsing:', typeof seats);
-      return res.json({
-        code: "error",
-        message: "Dữ liệu ghế phải là danh sách!"
-      });
-    }
-    
-    // Xử lý từng ghế
-    for (const seat of seats) {
-      let seatNumber, seatType, price;
-      
-      // TH1: seat là object {seatNumber, type, price}
-      if (typeof seat === 'object' && seat !== null && seat.seatNumber) {
-        seatNumber = seat.seatNumber;
-        seatType = seat.type || 'standard';
-        price = seat.price || (movie.prices && movie.prices[seatType]) || 50000;
-      } 
-      // TH2: seat là string thuần (legacy hoặc từ frontend cũ)
-      else if (typeof seat === 'string') {
-        seatNumber = seat;
-        
-        // Xác định loại ghế dựa vào ký tự đầu của seatNumber
-        if (seatNumber.startsWith('V')) {
-          seatType = 'vip';
-          price = (movie.prices && movie.prices.vip) || 60000;
-        } else if (seatNumber.startsWith('C') || seatNumber.includes('-')) {
-          seatType = 'couple';
-          price = (movie.prices && movie.prices.couple) || 110000;
-        } else {
-          seatType = 'standard';
-          price = (movie.prices && movie.prices.standard) || 50000;
-        }
-      } 
-      // TH3: Không hợp lệ
-      else {
-        console.error('Invalid seat format:', seat);
-        continue;
-      }
-      
-      subTotal += price;
-      
-      seatDetails.push({
-        seatNumber: seatNumber,
-        type: seatType,
-        price: price
-      });
-    }
-    
-    // Kiểm tra xem có ghế hợp lệ không
-    if (seatDetails.length === 0) {
-      return res.json({
-        code: "error",
-        message: "Không có ghế hợp lệ được chọn!"
-      });
-    }
-    // ==========================================
+    seatDetails.forEach(seat => {
+      subTotal += seat.price;
+    });
 
     // Tính tổng tiền combo
     let comboTotal = 0;
@@ -159,23 +173,17 @@ module.exports.createPost = async (req, res) => {
     // Tổng thanh toán
     const total = subTotal + comboTotal - discount;
 
-    // ===== FIX: Chuyển đổi showtimeDate sang Date object =====
+    // Chuyển đổi showtimeDate sang Date object
     let showtimeDateObj;
     try {
-      // Nếu showtimeDate đã là Date object
       if (showtimeDate instanceof Date) {
         showtimeDateObj = showtimeDate;
-      } 
-      // Nếu là ISO string hoặc date string
-      else if (typeof showtimeDate === 'string') {
+      } else if (typeof showtimeDate === 'string') {
         showtimeDateObj = new Date(showtimeDate);
-      }
-      // Fallback
-      else {
+      } else {
         showtimeDateObj = new Date(showtimeDate);
       }
       
-      // Kiểm tra valid date
       if (isNaN(showtimeDateObj.getTime())) {
         throw new Error("Invalid date");
       }
@@ -186,9 +194,8 @@ module.exports.createPost = async (req, res) => {
         message: "Ngày chiếu không hợp lệ!"
       });
     }
-    // ==========================================
 
-    // Lưu thông tin đặt vé
+    // ===== QUAN TRỌNG: LƯU VÀO DATABASE =====
     const newBooking = new Booking({
       bookingCode: bookingCode,
       fullName: fullName,
@@ -204,7 +211,7 @@ module.exports.createPost = async (req, res) => {
         time: showtimeTime,
         format: showtimeFormat || "2D"
       },
-      seats: seatDetails,
+      seats: seatDetails, // ← ĐÃ LÀ ARRAY OF OBJECTS
       combos: comboDetails,
       subTotal: subTotal,
       comboTotal: comboTotal,
@@ -216,7 +223,15 @@ module.exports.createPost = async (req, res) => {
       userId: req.user ? req.user.id : null
     });
 
+    console.log('=== BEFORE SAVE ===');
+    console.log('newBooking.seats:', newBooking.seats);
+    console.log('Type:', typeof newBooking.seats);
+    console.log('Is Array:', Array.isArray(newBooking.seats));
+    console.log('First seat:', newBooking.seats[0]);
+    console.log('===================');
+
     await newBooking.save();
+    // =========================================
 
     res.json({
       code: "success",
@@ -307,12 +322,10 @@ module.exports.getBookedSeats = async (req, res) => {
       });
     }
 
-    // Chuyển đổi date string sang Date object
     const searchDate = new Date(date);
     const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
     const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
 
-    // Lấy danh sách ghế đã đặt từ các booking
     const bookings = await Booking.find({
       movieId: movieId,
       cinema: cinema,
