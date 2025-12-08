@@ -672,6 +672,7 @@ block main
       }
       
       // Continue button
+      // Continue button
       btnContinue.addEventListener('click', function() {
         if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
           alert('Vui lòng chọn đầy đủ thông tin rạp, ngày và giờ chiếu!');
@@ -687,20 +688,15 @@ block main
         const cinema = cinemaSelect.value;
         const dateOption = dateSelect.options[dateSelect.selectedIndex];
         
-        // FIX: Ensure date is properly formatted
+        // Chuyển đổi date sang ISO string
         let dateValue = dateSelect.value;
         let dateISO;
         
         try {
-          // Parse the date value
           const dateObj = new Date(dateValue);
-          
-          // Check if valid
           if (isNaN(dateObj.getTime())) {
             throw new Error('Invalid date');
           }
-          
-          // Convert to ISO string for storage
           dateISO = dateObj.toISOString();
         } catch(e) {
           alert('Ngày chiếu không hợp lệ!');
@@ -710,52 +706,47 @@ block main
         const time = timeSelect.value;
         const format = dateOption.getAttribute('data-format');
         
-        // Tính tiền vé hiện tại
-        let ticketPriceCalc = 0;
-        selectedSeats.forEach(seatNumber => {
+        // ===== FIX: Chuyển seats thành array of objects ngay từ đầu =====
+        const seatObjects = selectedSeats.map(seatNumber => {
           const seatEl = document.querySelector(`[data-seat="${seatNumber}"]`);
-          if (seatEl) ticketPriceCalc += parseInt(seatEl.getAttribute('data-price')) || 0;
+          return {
+            seatNumber: seatNumber,
+            type: seatEl ? seatEl.getAttribute('data-type') : 'standard',
+            price: seatEl ? parseInt(seatEl.getAttribute('data-price')) : 50000
+          };
         });
-
-        const cartItem = {
-          movieId: movieId,
-          cinema: cinema,
-          showtimeDate: dateISO, // Use ISO string
-          showtimeTime: time,
-          showtimeFormat: format,
-          seats: selectedSeats,
-          combos: {},
-          checked: true,
-          ticketPrice: ticketPriceCalc
-        };
         
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingIndex = cart.findIndex(item => 
-          item.movieId === movieId && item.cinema === cinema
-        );
+        // Tính tiền vé
+        let ticketPrice = 0;
+        seatObjects.forEach(seat => {
+          ticketPrice += seat.price;
+        });
+        // ================================================================
         
-        if (existingIndex !== -1) {
-          cart[existingIndex] = cartItem;
-        } else {
-          cart.push(cartItem);
-        }
-        
-        localStorage.setItem('cart', JSON.stringify(cart));
-
-        // Đồng thời lưu bookingData vào sessionStorage
+        // ===== BỎ LOGIC GIỎ HÀNG - Chỉ lưu vào sessionStorage =====
         const bookingData = {
           movieId: movieId,
+          movieName: '#{movieDetail.name}', // Lấy từ server
+          movieAvatar: '#{movieDetail.avatar}',
+          ageRating: '#{movieDetail.ageRating || "P"}',
+          language: '#{movieDetail.language || "Phụ đề"}',
           cinema: cinema,
-          showtimeDate: dateISO, // Use ISO string
+          showtimeDate: dateISO,
           showtimeTime: time,
           showtimeFormat: format,
-          seats: selectedSeats,
+          seats: seatObjects, // Array of objects
           combos: {},
-          ticketPrice: ticketPriceCalc
+          ticketPrice: ticketPrice
         };
+        
+        // Lưu vào sessionStorage (CHỈ tồn tại trong phiên hiện tại)
         sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
-
+        
+        console.log('=== Booking data saved to sessionStorage ===');
+        console.log(bookingData);
+        // ===========================================================
+        
         // Chuyển sang trang chọn combo
         window.location.href = `/booking/combo?movieId=${movieId}`;
       });
-          });
+    });

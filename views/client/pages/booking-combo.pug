@@ -423,24 +423,28 @@ block main
     }
 
   script.
+    // Thay thế toàn bộ script block trong booking-combo.pug
+
     document.addEventListener('DOMContentLoaded', function() {
-      // Lấy dữ liệu booking từ sessionStorage
-      const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || '{}');
+      // ===== CHỈ LẤY TỪ sessionStorage =====
+      const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || 'null');
       
-      if (!bookingData.movieId || !bookingData.seats) {
+      if (!bookingData || !bookingData.movieId || !bookingData.seats) {
         alert('Không tìm thấy thông tin đặt vé. Vui lòng chọn ghế lại.');
         window.location.href = '/';
         return;
       }
+      // ====================================
       
       // Hiển thị thông tin booking
       document.getElementById('cinema-display').textContent = bookingData.cinema || '--';
       document.getElementById('date-display').textContent = bookingData.showtimeDate ? 
         new Date(bookingData.showtimeDate).toLocaleDateString('vi-VN') : '--';
       document.getElementById('time-display').textContent = bookingData.showtimeTime || '--';
-      document.getElementById('seats-display').textContent = bookingData.seats.join(', ');
+      document.getElementById('seats-display').textContent = 
+        bookingData.seats.map(s => s.seatNumber).join(', ');
       
-      // Tính tiền vé từ giá đã lưu trong booking
+      // Tính tiền vé từ giá đã lưu
       let ticketPrice = bookingData.ticketPrice || 0;
       document.getElementById('ticket-price').textContent = ticketPrice.toLocaleString('vi-VN') + 'đ';
       
@@ -506,11 +510,15 @@ block main
           }
         });
         
-        // Cập nhật booking data
+        // ===== Cập nhật sessionStorage =====
         bookingData.combos = selectedCombos;
         sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
         
-        // Chuyển sang trang xác nhận (cart hoặc checkout)
+        console.log('=== Updated booking data with combos ===');
+        console.log(bookingData);
+        // ====================================
+        
+        // Chuyển sang trang checkout
         window.location.href = '/booking/checkout';
       });
     });

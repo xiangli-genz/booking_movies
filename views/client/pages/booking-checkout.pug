@@ -653,6 +653,7 @@ block main
     }
 
   script.
+    // Thay thế toàn bộ script block trong booking-checkout.pug
     document.addEventListener('DOMContentLoaded', function() {
       // Lấy dữ liệu booking từ sessionStorage hoặc localStorage
       let bookingData = JSON.parse(sessionStorage.getItem('bookingData') || 'null');
@@ -673,20 +674,94 @@ block main
         return;
       }
       
-      // Hiển thị thông tin phim (nếu có trong bookingData hoặc từ page context)
-      const movieDetail = !{JSON.stringify(movieDetail || {})};
-      if (movieDetail && movieDetail.avatar) {
-        document.getElementById('movie-poster').src = movieDetail.avatar;
-        document.getElementById('movie-poster').alt = movieDetail.name;
-        document.getElementById('movie-title').textContent = movieDetail.name || '--';
-        document.getElementById('movie-subtitle').textContent = 
-          `${movieDetail.ageRating || 'P'} - ${movieDetail.language || 'Phụ đề'}`;
+      // ===== FIX: Chuẩn hóa seats ngay từ đầu =====
+      function normalizeSeats(seats) {
+        if (!seats) return [];
+        
+        // Nếu là string, parse nó
+        if (typeof seats === 'string') {
+          try {
+            seats = JSON.parse(seats);
+          } catch(e) {
+            console.error('Cannot parse seats:', e);
+            return [];
+          }
+        }
+        
+        // Đảm bảo là array
+        if (!Array.isArray(seats)) {
+          console.error('Seats is not an array:', typeof seats);
+          return [];
+        }
+        
+        // Chuẩn hóa từng phần tử
+        return seats.map(seat => {
+          // Nếu đã là object hợp lệ
+          if (typeof seat === 'object' && seat !== null && seat.seatNumber) {
+            return {
+              seatNumber: seat.seatNumber,
+              type: seat.type || 'standard',
+              price: seat.price || 50000
+            };
+          }
+          
+          // Nếu là string
+          if (typeof seat === 'string') {
+            // Thử parse JSON
+            try {
+              const parsed = JSON.parse(seat);
+              if (parsed.seatNumber) {
+                return {
+                  seatNumber: parsed.seatNumber,
+                  type: parsed.type || 'standard',
+                  price: parsed.price || 50000
+                };
+              }
+            } catch(e) {
+              // Không parse được, coi như là seatNumber
+            }
+            
+            // Xác định type dựa vào seatNumber
+            let type = 'standard';
+            let price = 50000;
+            
+            if (seat.startsWith('V')) {
+              type = 'vip';
+              price = 60000;
+            } else if (seat.startsWith('C') || seat.includes('-')) {
+              type = 'couple';
+              price = 110000;
+            }
+            
+            return { seatNumber: seat, type: type, price: price };
+          }
+          
+          console.error('Invalid seat format:', seat);
+          return null;
+        }).filter(Boolean); // Loại bỏ null
       }
+      
+      // Chuẩn hóa seats
+      bookingData.seats = normalizeSeats(bookingData.seats);
+      
+      console.log('=== Normalized booking data ===');
+      console.log('seats:', bookingData.seats);
+      console.log('seats type:', typeof bookingData.seats);
+      console.log('is array:', Array.isArray(bookingData.seats));
+      // ===============================================
+      
+      // Hiển thị thông tin phim
+      const movieDetail = {
+        avatar: bookingData.movieAvatar || '',
+        name: bookingData.movieName || 'Đang tải...',
+        ageRating: bookingData.ageRating || 'P',
+        language: bookingData.language || 'Phụ đề'
+      };
       
       // Hiển thị thông tin booking
       document.getElementById('cinema-display').textContent = bookingData.cinema || '--';
       
-      // FIX: Format date properly
+      // Format date
       let dateDisplay = '--';
       if (bookingData.showtimeDate) {
         try {
@@ -702,7 +777,8 @@ block main
       
       document.getElementById('time-display').textContent = bookingData.showtimeTime || '--';
       document.getElementById('format-display').textContent = bookingData.showtimeFormat || '--';
-      document.getElementById('seats-display').textContent = bookingData.seats.join(', ');
+      document.getElementById('seats-display').textContent = 
+        bookingData.seats.map(s => s.seatNumber).join(', ');
       
       // Hiển thị combo nếu có
       if (bookingData.combos && Object.keys(bookingData.combos).length > 0) {
@@ -801,7 +877,7 @@ block main
           return;
         }
         
-        // FIX: Ensure showtimeDate is in ISO format
+        // ===== FIX: Đảm bảo showtimeDate là ISO string =====
         let showtimeDateISO;
         try {
           if (bookingData.showtimeDate instanceof Date) {
@@ -817,15 +893,24 @@ block main
           alert('Ngày chiếu không hợp lệ!');
           return;
         }
+        // =================================================
+        
+        // ===== FIX: Đảm bảo seats là array of objects =====
+        const seatsPayload = bookingData.seats.map(seat => ({
+          seatNumber: seat.seatNumber,
+          type: seat.type || 'standard',
+          price: seat.price || 50000
+        }));
+        // =================================================
         
         // Tạo payload
         const payload = {
           movieId: bookingData.movieId || bookingData.tourId,
           cinema: bookingData.cinema,
-          showtimeDate: showtimeDateISO, // FIX: Send ISO string
+          showtimeDate: showtimeDateISO,
           showtimeTime: bookingData.showtimeTime,
           showtimeFormat: bookingData.showtimeFormat,
-          seats: bookingData.seats,
+          seats: seatsPayload, // ← Array of objects
           combos: bookingData.combos || {},
           fullName: fullName,
           phone: phone,
@@ -833,6 +918,14 @@ block main
           note: note,
           paymentMethod: paymentMethod
         };
+        
+        // Debug payload
+        console.log('=== FINAL PAYLOAD ===');
+        console.log('seats type:', typeof payload.seats);
+        console.log('seats isArray:', Array.isArray(payload.seats));
+        console.log('seats[0]:', payload.seats[0]);
+        console.log('Full payload:', JSON.stringify(payload, null, 2));
+        console.log('====================');
         
         // Disable button để tránh double click
         btnPay.disabled = true;
@@ -862,10 +955,7 @@ block main
             // Redirect dựa vào phương thức thanh toán
             if (paymentMethod === 'zalopay') {
               window.location.href = `/booking/payment-zalopay?bookingId=${data.bookingId}`;
-            } else if (paymentMethod === 'momo') {
-              window.location.href = `/booking/success?bookingId=${data.bookingId}&phone=${phone}`;
             } else {
-              // Thanh toán tiền mặt hoặc chuyển khoản
               window.location.href = `/booking/success?bookingId=${data.bookingId}&phone=${phone}`;
             }
           } else {

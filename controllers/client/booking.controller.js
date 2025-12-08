@@ -73,9 +73,10 @@ module.exports.createPost = async (req, res) => {
     
     // Đảm bảo seats là array
     if (!Array.isArray(seats)) {
+      console.error('Seats is not an array after parsing:', typeof seats);
       return res.json({
         code: "error",
-        message: "Dữ liệu ghế không đúng định dạng!"
+        message: "Dữ liệu ghế phải là danh sách!"
       });
     }
     

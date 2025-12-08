@@ -15,6 +15,7 @@
           i.fa-solid.fa-building
           | #{settingWebsiteInfo.address}
 // End Top Header
+
 // Header
 header.header
   .container
@@ -22,6 +23,7 @@ header.header
       // Menu Mobile
       button.inner-menu-mobile
         i.fa-solid.fa-bars
+      
       // Logo
       .inner-logo
         a(href="/")
@@ -29,6 +31,7 @@ header.header
             alt=settingWebsiteInfo.websiteName
             src=settingWebsiteInfo.logo
             )
+      
       // Menu
       nav.inner-menu
         ul
@@ -48,8 +51,8 @@ header.header
           li
             a(href="/contacts") Liên hệ
         .inner-overlay
-      // Cart
-      // User
+      
+      // ===== BỎ ICON GIỎ HÀNG - CHỈ GIỮ USER =====
       .inner-cart
         if user
           .inner-user-dropdown
@@ -94,6 +97,7 @@ header.header
               alt="User" 
               src="/assets/images/icon-user.png"
             )
+      // ===========================================
 
 style.
   .inner-user-dropdown {
@@ -126,6 +130,7 @@ style.
   .inner-user-dropdown.show .inner-user-menu {
     display: block;
   }
+  
   .inner-user-name {
     font-weight: 600;
     margin-top: 10px;
@@ -173,16 +178,14 @@ script.
         e.stopPropagation();
         dropdown.classList.toggle('show');
       });
+      
+      // Close when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target)) {
+          dropdown.classList.remove('show');
+        }
+      });
     }
-
-    // Close when clicking outside
-    document.addEventListener('click', function(e) {
-      if (!dropdown.contains(e.target)) {
-        dropdown.classList.remove('show');
-      }
-    });
   });
-  
-  
-  
+
 // End Header
