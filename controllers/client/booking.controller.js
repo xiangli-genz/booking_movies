@@ -12,7 +12,31 @@ module.exports.createPost = async (req, res) => {
     // Tạo mã booking
     const bookingCode = "BK" + generateHelper.generateRandomNumber(10);
     
-    const { movieId, cinema, showtimeDate, showtimeTime, showtimeFormat, seats, combos, fullName, phone, email, note, paymentMethod } = req.body;
+    let { movieId, cinema, showtimeDate, showtimeTime, showtimeFormat, seats, combos, fullName, phone, email, note, paymentMethod } = req.body;
+    
+    // ===== FIX: Parse seats nếu là string =====
+    if (typeof seats === 'string') {
+      try {
+        seats = JSON.parse(seats);
+      } catch (e) {
+        console.error('Error parsing seats:', e);
+        return res.json({
+          code: "error",
+          message: "Dữ liệu ghế không hợp lệ!"
+        });
+      }
+    }
+    
+    // ===== FIX: Parse combos nếu là string =====
+    if (typeof combos === 'string') {
+      try {
+        combos = JSON.parse(combos);
+      } catch (e) {
+        console.error('Error parsing combos:', e);
+        combos = {};
+      }
+    }
+    // ==========================================
     
     // Validate dữ liệu đầu vào
     if (!movieId || !cinema || !showtimeDate || !showtimeTime || !seats || seats.length === 0) {
@@ -47,31 +71,48 @@ module.exports.createPost = async (req, res) => {
     let subTotal = 0;
     const seatDetails = [];
     
-    // Xử lý danh sách ghế
-    const seatArray = Array.isArray(seats) ? seats : [seats];
+    // ===== FIX: Xử lý seats là array =====
+    if (!Array.isArray(seats)) {
+      return res.json({
+        code: "error",
+        message: "Dữ liệu ghế không đúng định dạng!"
+      });
+    }
     
-    seatArray.forEach(seat => {
-      let seatType = 'standard';
-      let price = movie.prices && movie.prices.standard ? movie.prices.standard : 50000;
+    seats.forEach(seat => {
+      let seatNumber, seatType, price;
       
-      // Xác định loại ghế dựa vào ký tự đầu
-      const seatStr = String(seat);
-      if(seatStr.startsWith('V')) {
-        seatType = 'vip';
-        price = movie.prices && movie.prices.vip ? movie.prices.vip : 60000;
-      } else if(seatStr.startsWith('C') || seatStr.includes('-')) {
-        seatType = 'couple';
-        price = movie.prices && movie.prices.couple ? movie.prices.couple : 110000;
+      // Nếu seat là object (từ frontend mới)
+      if (typeof seat === 'object' && seat !== null) {
+        seatNumber = seat.seatNumber;
+        seatType = seat.type || 'standard';
+        price = seat.price || (movie.prices && movie.prices.standard) || 50000;
+      } 
+      // Nếu seat là string (legacy)
+      else {
+        seatNumber = String(seat);
+        seatType = 'standard';
+        price = movie.prices && movie.prices.standard ? movie.prices.standard : 50000;
+        
+        // Xác định loại ghế dựa vào ký tự đầu
+        if(seatNumber.startsWith('V')) {
+          seatType = 'vip';
+          price = movie.prices && movie.prices.vip ? movie.prices.vip : 60000;
+        } else if(seatNumber.startsWith('C') || seatNumber.includes('-')) {
+          seatType = 'couple';
+          price = movie.prices && movie.prices.couple ? movie.prices.couple : 110000;
+        }
       }
       
       subTotal += price;
       
       seatDetails.push({
-        seatNumber: seatStr,
+        seatNumber: seatNumber,
         type: seatType,
         price: price
       });
     });
+    // ==========================================
 
     // Tính tổng tiền combo
     let comboTotal = 0;
