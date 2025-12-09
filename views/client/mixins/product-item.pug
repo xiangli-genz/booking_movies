@@ -1,59 +1,50 @@
 mixin product-item(item)
-  - const standardPrice = (item.prices && item.prices.standard) || 50000;
-  - const vipPrice = (item.prices && item.prices.vip) || 60000;
-  - const couplePrice = (item.prices && item.prices.couple) || 110000;
-  - const displayPrice = standardPrice;
-  - const discount = 0; // Calculate if you have old price
   - const displayDate = item.releaseDateFormat || "";
-  - const availableSeats = item.seatMap ? (item.seatMap.rows * item.seatMap.columns) - (item.seatMap.bookedSeats ? item.seatMap.bookedSeats.length : 0) : 0;
+  - const trailerUrl = item.trailer || "";
 
   .product-item
     .inner-image
-      a(href=`/movie/detail/${item.slug}`)
-        img(
-          alt=item.name
-          src=item.avatar
-        )
-    
-    if discount > 0
-      .inner-discount
-        i.fa-solid.fa-bolt
-        | Giảm -#{discount}%
+      if trailerUrl
+        a.trailer-link(href="javascript:;" data-trailer=trailerUrl)
+          img(
+            alt=item.name
+            src=item.avatar
+          )
+          .play-icon
+            i.fa-solid.fa-circle-play
+      else
+        a(href=`/movie/detail/${item.slug}`)
+          img(
+            alt=item.name
+            src=item.avatar
+          )
     
     .inner-content
       h3.inner-title
         a(href=`/movie/detail/${item.slug}`) #{item.name}
       
-      .inner-prices
-        .inner-price-new
-          | #{displayPrice.toLocaleString("vi-VN")}
-          span.inner-unit đ
-          |  - 
-          | #{couplePrice.toLocaleString("vi-VN")}
-          span.inner-unit đ
-      
       .inner-desc
         if displayDate
           .inner-desc-item
-            i.fa-solid.fa-calendar-days(style="margin-right: 5px;")
+            i.fa-solid.fa-calendar-days
             | Ngày chiếu:
             b #{displayDate}
         
         if item.duration
           .inner-desc-item
-            i.fa-solid.fa-clock(style="margin-right: 5px;")
+            i.fa-solid.fa-clock
             | Thời lượng:
             b #{item.duration}
         
         if item.ageRating
           .inner-desc-item
-            i.fa-solid.fa-child(style="margin-right: 5px;")
+            i.fa-solid.fa-child
             | Độ tuổi:
             b #{item.ageRating}
         
         if item.showtimes && item.showtimes.length > 0
           .inner-desc-item
-            i.fa-solid.fa-film(style="margin-right: 5px;")
+            i.fa-solid.fa-film
             | Định dạng:
             each showtime, index in item.showtimes.slice(0, 2)
               if index > 0
@@ -70,11 +61,5 @@ mixin product-item(item)
             i.fa-solid.fa-star-half-stroke
           .inner-number (4.5/5)
         
-        if availableSeats > 0
-          .inner-stock
-            .inner-label Còn chỗ:
-            .inner-number #{availableSeats}
-        else
-          .inner-stock
-            .inner-label Còn chỗ:
-            .inner-number ∞
+        a.btn-book(href=`/movie/detail/${item.slug}`)
+          | Đặt vé

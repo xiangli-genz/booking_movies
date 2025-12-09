@@ -25,6 +25,70 @@ if(buttonMenuMobile) {
   });
 }
 // End Menu Mobile
+// Trailer Modal
+document.addEventListener('DOMContentLoaded', function() {
+  // Tạo modal trailer
+  const trailerModal = document.createElement('div');
+  trailerModal.className = 'trailer-modal';
+  trailerModal.innerHTML = `
+    <div class="trailer-modal-content">
+      <button class="trailer-modal-close">&times;</button>
+      <iframe id="trailer-iframe" allowfullscreen></iframe>
+    </div>
+  `;
+  document.body.appendChild(trailerModal);
+
+  // Lấy YouTube video ID từ URL
+  function getYouTubeVideoId(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  }
+
+  // Xử lý click vào trailer link
+  document.addEventListener('click', function(e) {
+    const trailerLink = e.target.closest('.trailer-link');
+    if (trailerLink) {
+      e.preventDefault();
+      const trailerUrl = trailerLink.getAttribute('data-trailer');
+      if (trailerUrl) {
+        const videoId = getYouTubeVideoId(trailerUrl);
+        if (videoId) {
+          const iframe = document.getElementById('trailer-iframe');
+          iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+          trailerModal.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      }
+    }
+  });
+
+  // Đóng modal
+  function closeTrailerModal() {
+    trailerModal.classList.remove('active');
+    const iframe = document.getElementById('trailer-iframe');
+    iframe.src = '';
+    document.body.style.overflow = '';
+  }
+
+  // Click vào nút close
+  trailerModal.querySelector('.trailer-modal-close').addEventListener('click', closeTrailerModal);
+
+  // Click vào overlay
+  trailerModal.addEventListener('click', function(e) {
+    if (e.target === trailerModal) {
+      closeTrailerModal();
+    }
+  });
+
+  // Nhấn ESC để đóng
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && trailerModal.classList.contains('active')) {
+      closeTrailerModal();
+    }
+  });
+});
+// End Trailer Modal
 
 // Box Address Section 1
 const boxAddressSection1 = document.querySelector(".section-1 .inner-form .inner-box.inner-address");

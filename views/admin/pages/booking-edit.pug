@@ -69,3 +69,42 @@ block main
     
     .inner-back
       a(href=`/${pathAdmin}/booking/list`) Quay lại danh sách
+
+    script.
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('booking-edit-form');
+            
+            if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const id = '#{bookingDetail.id}';
+                const formData = {
+                paymentStatus: document.getElementById('paymentStatus').value,
+                status: document.getElementById('status').value,
+                note: document.getElementById('note')?.value || ''
+                };
+                
+                fetch(`/${pathAdmin}/booking/edit/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+                })
+                .then(res => res.json())
+                .then(data => {
+                if (data.code === 'success') {
+                    alert('Cập nhật thành công!');
+                    window.location.href = `/${pathAdmin}/booking/list`;
+                } else {
+                    alert(data.message || 'Cập nhật thất bại!');
+                }
+                })
+                .catch(err => {
+                console.error('Error:', err);
+                alert('Có lỗi xảy ra!');
+                });
+            });
+            }
+        });

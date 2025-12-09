@@ -522,7 +522,7 @@ module.exports.edit = async (req, res) => {
     }
 
     // Format thời gian
-    bookingDetail.createdAtFormat = moment(bookingDetail.createdAt).format("DD/MM/YYYY HH:mm");
+    bookingDetail.createdAtFormat = moment(bookingDetail.createdAt).format("YYYY-MM-DDTHH:mm");
     
     if(bookingDetail.showtime && bookingDetail.showtime.date) {
       bookingDetail.showtimeDateFormat = moment(bookingDetail.showtime.date).format("DD/MM/YYYY");
@@ -533,6 +533,7 @@ module.exports.edit = async (req, res) => {
     // Thêm thông tin user nếu có
     if(bookingDetail.userId) {
       try {
+        const User = require("../../models/user.model");
         const userInfo = await User.findOne({ _id: bookingDetail.userId }).select('fullName email phone');
         bookingDetail.userInfo = userInfo;
       } catch (e) {
@@ -542,7 +543,10 @@ module.exports.edit = async (req, res) => {
 
     res.render("admin/pages/booking-edit", {
       pageTitle: `Đặt vé: ${bookingDetail.bookingCode}`,
-      bookingDetail: bookingDetail
+      bookingDetail: bookingDetail,
+      paymentMethod: require("../../config/variable").paymentMethod,
+      paymentStatus: require("../../config/variable").paymentStatus,
+      bookingStatus: require("../../config/variable").bookingStatus
     });
   } catch (error) {
     console.error("Error in booking edit:", error);

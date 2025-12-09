@@ -2,44 +2,19 @@ const Joi = require('joi');
 
 module.exports.editPatch = (req, res, next) => {
   const schema = Joi.object({
-    fullName: Joi.string()
-      .required()
-      .min(5)
-      .max(50)
-      .messages({
-        "string.empty": "Vui lòng nhập họ tên!",
-        "string.min": "Họ tên phải có ít nhất 5 ký tự!",
-        "string.max": "Họ tên không được vượt quá 50 ký tự!",
-      }),
-    phone: Joi.string()
-      .required()
-      .pattern(/(84|0[3|5|7|8|9])+([0-9]{8})\b/g)
-      .messages({
-        "string.empty": "Vui lòng nhập số điện thoại!",
-        "string.pattern.base": "Số điện thoại không đúng định dạng!"
-      }),
-    email: Joi.string()
-      .allow('')
-      .email()
-      .messages({
-        "string.email": "Email không đúng định dạng!"
-      }),
-    note: Joi.string().allow(''),
-    paymentMethod: Joi.string().allow(''),
-    paymentStatus: Joi.string().allow(''),
-    status: Joi.string().allow('')
+    paymentStatus: Joi.string().valid('paid', 'unpaid').required(),
+    status: Joi.string().valid('initial', 'confirmed', 'cancelled', 'completed').required(),
+    note: Joi.string().allow('').optional()
   });
 
   const { error } = schema.validate(req.body);
 
   if(error) {
-    const errorMessage = error.details[0].message;
-    res.json({
+    return res.json({
       code: "error",
-      message: errorMessage
+      message: error.details[0].message
     });
-    return;
   }
   
   next();
-}
+};
