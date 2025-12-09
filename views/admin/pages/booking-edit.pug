@@ -5,26 +5,6 @@ block main
 
   .section-8
     form#booking-edit-form
-      .inner-group(style="display: none;")
-        label(class="inner-label" for="id") Id
-        input(type="text" id="id" name="id" value=bookingDetail.id)
-
-      .inner-group
-        label(class="inner-label" for="fullName") Tên khách hàng
-        input(type="text" id="fullName" name="fullName" value=bookingDetail.fullName)
-      
-      .inner-group
-        label(class="inner-label" for="phone") Số điện thoại
-        input(type="text" id="phone" name="phone" value=bookingDetail.phone)
-      
-      .inner-group
-        label(class="inner-label" for="email") Email
-        input(type="email" id="email" name="email" value=bookingDetail.email)
-      
-      .inner-group.inner-two-col
-        label(class="inner-label" for="note") Ghi chú
-        textarea(id="note" name="note") #{bookingDetail.note || ''}
-
       .inner-group
         label(class="inner-label") Thông tin phim
         .inner-order-list
@@ -52,16 +32,8 @@ block main
               div #{combo.name} x#{combo.quantity}: #{combo.totalPrice.toLocaleString("vi-VN")}đ
           else
             div Không có combo
-
+    
       .inner-group
-        label(class="inner-label" for="paymentMethod") Phương thức thanh toán
-        select(id="paymentMethod" name="paymentMethod")
-          each item in paymentMethod
-            option(
-              value=item.value
-              selected=(item.value == bookingDetail.paymentMethod ? true : false)
-            ) #{item.label}
-
       .inner-group
         label(class="inner-label" for="paymentStatus") Trạng thái thanh toán
         select(id="paymentStatus" name="paymentStatus")

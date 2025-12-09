@@ -405,3 +405,213 @@ module.exports.checkout = async (req, res) => {
     res.redirect('/');
   }
 };
+
+// [GET] /admin/booking/list
+module.exports.list = async (req, res) => {
+  const find = {
+    deleted: false
+  };
+
+  const dateFiler = {};
+
+  if(req.query.startDate) {
+    const startDate = moment(req.query.startDate).startOf("date").toDate();
+    dateFiler.$gte = startDate;
+  }
+
+  if(req.query.endDate) {
+    const endDate = moment(req.query.endDate).endOf("date").toDate();
+    dateFiler.$lte = endDate;
+  }
+
+  if(Object.keys(dateFiler).length > 0) {
+    find.createdAt = dateFiler;
+  }
+
+  if (req.query.keyword) {
+    const kw = req.query.keyword.trim();
+    if (kw.length > 0) {
+      const keywordRegex = new RegExp(kw, "i");
+      find.$or = [
+        { bookingCode: keywordRegex },
+        { fullName: keywordRegex },
+        { phone: keywordRegex }
+      ];
+    }
+  }
+
+  // PHÂN TRANG
+  const limit = 10;
+  const page = parseInt(req.query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  const totalRecords = await Booking.countDocuments(find);
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  const bookingList = await Booking
+    .find(find)
+    .sort({
+      createdAt: "desc"
+    })
+    .skip(skip)
+    .limit(limit);
+
+  for (const booking of bookingList) {
+    booking.paymentMethodName = {
+      money: "Tiền mặt",
+      zalopay: "ZaloPay",
+      bank: "Chuyển khoản",
+      momo: "Momo"
+    }[booking.paymentMethod] || booking.paymentMethod;
+
+    booking.paymentStatusName = booking.paymentStatus === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
+
+    booking.statusName = {
+      initial: "Đang xử lý",
+      confirmed: "Đã xác nhận", 
+      cancelled: "Đã hủy",
+      completed: "Hoàn thành"
+    }[booking.status] || booking.status;
+
+    booking.createdAtTime = moment(booking.createdAt).format("HH:mm");
+    booking.createdAtDate = moment(booking.createdAt).format("DD/MM/YYYY");
+    
+    if(booking.showtime && booking.showtime.date) {
+      booking.showtimeDateFormat = moment(booking.showtime.date).format("DD/MM/YYYY");
+    } else {
+      booking.showtimeDateFormat = "--";
+    }
+    
+    // Nếu có userId, gắn thông tin user để hiển thị
+    if(booking.userId) {
+      try {
+        const userInfo = await User.findOne({ _id: booking.userId }).select('fullName email');
+        booking.userFullName = userInfo ? (userInfo.fullName || userInfo.email) : null;
+      } catch (e) {
+        booking.userFullName = null;
+      }
+    }
+  }
+
+  res.render("admin/pages/booking-list", {
+    pageTitle: "Quản lý đặt vé",
+    bookingList: bookingList,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalRecords: totalRecords,
+      limit: limit,
+      endRecord: Math.min(page * limit, totalRecords)
+    }
+  });
+};
+
+// [GET] /admin/booking/edit/:id
+module.exports.edit = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const bookingDetail = await Booking.findOne({
+      _id: id,
+      deleted: false
+    });
+
+    if(!bookingDetail) {
+      res.redirect(`/${pathAdmin}/booking/list`);
+      return;
+    }
+
+    // Format thời gian
+    bookingDetail.createdAtFormat = moment(bookingDetail.createdAt).format("DD/MM/YYYY HH:mm");
+    
+    if(bookingDetail.showtime && bookingDetail.showtime.date) {
+      bookingDetail.showtimeDateFormat = moment(bookingDetail.showtime.date).format("DD/MM/YYYY");
+    } else {
+      bookingDetail.showtimeDateFormat = "--";
+    }
+
+    // Thêm thông tin user nếu có
+    if(bookingDetail.userId) {
+      try {
+        const userInfo = await User.findOne({ _id: bookingDetail.userId }).select('fullName email phone');
+        bookingDetail.userInfo = userInfo;
+      } catch (e) {
+        bookingDetail.userInfo = null;
+      }
+    }
+
+    res.render("admin/pages/booking-edit", {
+      pageTitle: `Đặt vé: ${bookingDetail.bookingCode}`,
+      bookingDetail: bookingDetail
+    });
+  } catch (error) {
+    console.error("Error in booking edit:", error);
+    res.redirect(`/${pathAdmin}/booking/list`);
+  }
+};
+
+// [PATCH] /admin/booking/edit/:id
+module.exports.editPatch = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const booking = await Booking.findOne({
+      _id: id,
+      deleted: false
+    });
+
+    if(!booking) {
+      return res.json({
+        code: "error",
+        message: "Thông tin đặt vé không hợp lệ!"
+      });
+    }
+
+    // Chỉ cập nhật các trường được phép
+    const updateData = {
+      paymentStatus: req.body.paymentStatus,
+      status: req.body.status,
+      note: req.body.note || "",
+      updatedBy: req.account.id
+    };
+
+    await Booking.updateOne({
+      _id: id,
+      deleted: false
+    }, updateData);
+
+    req.flash("success", "Cập nhật đặt vé thành công!");
+
+    res.json({
+      code: "success"
+    });
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    res.json({
+      code: "error",
+      message: "Cập nhật thất bại!"
+    });
+  }
+};
+
+// [PATCH] /admin/booking/delete/:id
+module.exports.deletePatch = async (req, res) => {
+  try {
+    const id = req.params.id;
+    
+    await Booking.deleteOne({
+      _id: id
+    });
+
+    req.flash("success", "Xóa đặt vé thành công!");
+
+    res.json({
+      code: "success"
+    });
+  } catch (error) {
+    res.json({
+      code: "error",
+      message: "Id không hợp lệ!"
+    });
+  }
+};
