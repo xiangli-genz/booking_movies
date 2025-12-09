@@ -1,0 +1,99 @@
+extends ../layouts/default.pug
+
+block main
+  h1.box-title Đặt vé: #{bookingDetail.bookingCode}
+
+  .section-8
+    form#booking-edit-form
+      .inner-group(style="display: none;")
+        label(class="inner-label" for="id") Id
+        input(type="text" id="id" name="id" value=bookingDetail.id)
+
+      .inner-group
+        label(class="inner-label" for="fullName") Tên khách hàng
+        input(type="text" id="fullName" name="fullName" value=bookingDetail.fullName)
+      
+      .inner-group
+        label(class="inner-label" for="phone") Số điện thoại
+        input(type="text" id="phone" name="phone" value=bookingDetail.phone)
+      
+      .inner-group
+        label(class="inner-label" for="email") Email
+        input(type="email" id="email" name="email" value=bookingDetail.email)
+      
+      .inner-group.inner-two-col
+        label(class="inner-label" for="note") Ghi chú
+        textarea(id="note" name="note") #{bookingDetail.note || ''}
+
+      .inner-group
+        label(class="inner-label") Thông tin phim
+        .inner-order-list
+          .inner-order-item
+            .inner-order-image
+              img(src=bookingDetail.movieAvatar, alt=bookingDetail.movieName)
+            .inner-order-content
+              .inner-order-name #{bookingDetail.movieName}
+              .inner-order-text Rạp: #{bookingDetail.cinema}
+              .inner-order-text Ngày: #{bookingDetail.showtimeDateFormat}
+              .inner-order-text Giờ: #{bookingDetail.showtime.time}
+              .inner-order-text Định dạng: #{bookingDetail.showtime.format}
+
+      .inner-group
+        label(class="inner-label") Thông tin ghế
+        .inner-order-total
+          each seat in bookingDetail.seats
+            div Ghế #{seat.seatNumber} (#{seat.type === 'standard' ? 'Thường' : seat.type === 'vip' ? 'VIP' : 'Đôi'}): #{seat.price.toLocaleString("vi-VN")}đ
+
+      .inner-group
+        label(class="inner-label") Combo đã chọn
+        .inner-order-total
+          if bookingDetail.combos && bookingDetail.combos.length > 0
+            each combo in bookingDetail.combos
+              div #{combo.name} x#{combo.quantity}: #{combo.totalPrice.toLocaleString("vi-VN")}đ
+          else
+            div Không có combo
+
+      .inner-group
+        label(class="inner-label" for="paymentMethod") Phương thức thanh toán
+        select(id="paymentMethod" name="paymentMethod")
+          each item in paymentMethod
+            option(
+              value=item.value
+              selected=(item.value == bookingDetail.paymentMethod ? true : false)
+            ) #{item.label}
+
+      .inner-group
+        label(class="inner-label" for="paymentStatus") Trạng thái thanh toán
+        select(id="paymentStatus" name="paymentStatus")
+          each item in paymentStatus
+            option(
+              value=item.value
+              selected=(item.value == bookingDetail.paymentStatus ? true : false)
+            ) #{item.label}
+
+      .inner-group
+        label(class="inner-label" for="status") Trạng thái đặt vé
+        select(id="status" name="status")
+          each item in bookingStatus
+            option(
+              value=item.value
+              selected=(item.value == bookingDetail.status ? true : false)
+            ) #{item.label}
+
+      .inner-group
+        label(class="inner-label" for="createdAt") Ngày đặt
+        input(type="datetime-local" id="createdAt" name="createdAt" value=bookingDetail.createdAtFormat readonly)
+
+      .inner-group
+        label(class="inner-label") Thanh toán
+        .inner-order-total
+          div Tiền vé: #{(bookingDetail.subTotal || 0).toLocaleString("vi-VN")}đ
+          div Tiền combo: #{(bookingDetail.comboTotal || 0).toLocaleString("vi-VN")}đ
+          div Giảm giá: #{(bookingDetail.discount || 0).toLocaleString("vi-VN")}đ
+          div Tổng thanh toán: <span class="inner-order-price">#{(bookingDetail.total || 0).toLocaleString("vi-VN")}đ</span>
+
+      .inner-button.inner-two-col
+        button Cập nhật
+    
+    .inner-back
+      a(href=`/${pathAdmin}/booking/list`) Quay lại danh sách

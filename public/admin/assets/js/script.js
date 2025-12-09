@@ -1545,3 +1545,82 @@ if (pagination) {
   }
 }
 // End Filter Status
+// Booking Edit Form
+const bookingEditForm = document.querySelector("#booking-edit-form");
+if (bookingEditForm) {
+  const validation = new JustValidate("#booking-edit-form");
+
+  validation
+    .addField("#fullName", [
+      {
+        rule: "required",
+        errorMessage: "Vui lòng nhập họ tên!",
+      },
+      {
+        rule: "minLength",
+        value: 5,
+        errorMessage: "Họ tên phải có ít nhất 5 ký tự!",
+      },
+      {
+        rule: "maxLength",
+        value: 50,
+        errorMessage: "Họ tên không được vượt quá 50 ký tự!",
+      },
+    ])
+    .addField("#phone", [
+      {
+        rule: "required",
+        errorMessage: "Vui lòng nhập số điện thoại!",
+      },
+      {
+        rule: "customRegexp",
+        value: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g,
+        errorMessage: "Số điện thoại không đúng định dạng!",
+      },
+    ])
+    .addField("#email", [
+      {
+        rule: "email",
+        errorMessage: "Email không đúng định dạng!",
+      },
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const fullName = event.target.fullName.value;
+      const phone = event.target.phone.value;
+      const email = event.target.email.value;
+      const note = event.target.note.value;
+      const paymentMethod = event.target.paymentMethod.value;
+      const paymentStatus = event.target.paymentStatus.value;
+      const status = event.target.status.value;
+
+      const dataFinal = {
+        fullName: fullName,
+        phone: phone,
+        email: email,
+        note: note,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus,
+        status: status,
+      };
+
+      fetch(`/${pathAdmin}/booking/edit/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataFinal),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code == "error") {
+            alert(data.message);
+          }
+
+          if (data.code == "success") {
+            window.location.reload();
+          }
+        });
+    });
+}
+// End Booking Edit Form

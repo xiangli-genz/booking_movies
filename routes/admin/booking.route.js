@@ -1,6 +1,8 @@
 const router = require("express").Router();
 const Booking = require("../../models/booking.model");
+const User = require("../../models/user.model");
 const moment = require("moment");
+const bookingValidate = require("../../validates/admin/booking.validate");
 
 // Danh sách đặt vé
 router.get("/list", async (req, res) => {
@@ -76,6 +78,16 @@ router.get("/list", async (req, res) => {
     } else {
       booking.showtimeDateFormat = "--";
     }
+    
+    // Nếu có userId, gắn thông tin user để hiển thị
+    if(booking.userId) {
+      try {
+        const userInfo = await User.findOne({ _id: booking.userId }).select('fullName email');
+        booking.userFullName = userInfo ? (userInfo.fullName || userInfo.email) : null;
+      } catch (e) {
+        booking.userFullName = null;
+      }
+    }
   }
 
   res.render("admin/pages/booking-list", {
@@ -101,8 +113,17 @@ router.get('/edit/:id', async (req, res) => {
       deleted: false
     });
 
+    if(!bookingDetail) {
+      res.redirect(`/${pathAdmin}/booking/list`);
+      return;
+    }
+
     bookingDetail.createdAtFormat = moment(bookingDetail.createdAt).format("YYYY-MM-DDTHH:mm");
-    bookingDetail.showtimeDateFormat = moment(bookingDetail.showtime.date).format("DD/MM/YYYY");
+    if(bookingDetail.showtime && bookingDetail.showtime.date) {
+      bookingDetail.showtimeDateFormat = moment(bookingDetail.showtime.date).format("DD/MM/YYYY");
+    } else {
+      bookingDetail.showtimeDateFormat = "--";
+    }
 
     res.render("admin/pages/booking-edit", {
       pageTitle: `Đặt vé: ${bookingDetail.bookingCode}`,
@@ -130,7 +151,7 @@ router.get('/edit/:id', async (req, res) => {
 });
 
 // Cập nhật đặt vé
-router.patch('/edit/:id', async (req, res) => {
+router.patch('/edit/:id', bookingValidate.editPatch, async (req, res) => {
   try {
     const id = req.params.id;
 
