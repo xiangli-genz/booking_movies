@@ -530,10 +530,11 @@ block main
   script.
     document.addEventListener('DOMContentLoaded', function() {
       const movieId = '#{movieDetail.id}';
+      const isLoggedIn = #{user ? 'true' : 'false'}; // Check if user is logged in
       let selectedSeats = [];
       let bookedSeats = [];
       let countdownTimer;
-      let timeRemaining = 600; // 10 phút
+      let timeRemaining = 600;
       let autoRefreshInterval;
       
       const cinemaSelect = document.getElementById('cinema-select');
@@ -541,7 +542,6 @@ block main
       const timeSelect = document.getElementById('time-select');
       const btnContinue = document.getElementById('btn-continue');
       
-      // Showtimes data từ server - đã group by cinema và date
       const showtimesGrouped = !{JSON.stringify(showtimesGrouped || {})};
       
       console.log('Showtimes grouped:', showtimesGrouped);
@@ -550,18 +550,15 @@ block main
       cinemaSelect.addEventListener('change', function() {
         const selectedCinema = this.value;
         
-        // Reset date và time
         dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>';
         timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
         timeSelect.disabled = true;
         
-        // Clear auto refresh khi đổi rạp
         clearAutoRefresh();
         
         if (selectedCinema && showtimesGrouped[selectedCinema]) {
           dateSelect.disabled = false;
           
-          // Populate date options
           Object.keys(showtimesGrouped[selectedCinema]).forEach(dateKey => {
             const showtime = showtimesGrouped[selectedCinema][dateKey];
             const option = document.createElement('option');
@@ -577,14 +574,12 @@ block main
         updateDisplay();
       });
       
-      // Update time options khi chọn ngày
       dateSelect.addEventListener('change', function() {
         const selectedCinema = cinemaSelect.value;
         const selectedDate = this.value;
         
         timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
         
-        // Clear auto refresh khi đổi ngày
         clearAutoRefresh();
         
         if (selectedCinema && selectedDate && showtimesGrouped[selectedCinema][selectedDate]) {
@@ -604,11 +599,10 @@ block main
         updateDisplay();
       });
       
-      // Update display và load booked seats khi thay đổi time
       timeSelect.addEventListener('change', function() {
         updateDisplay();
         loadBookedSeats();
-        startAutoRefresh(); // Bắt đầu tự động làm mới
+        startAutoRefresh();
       });
       
       function updateDisplay() {
@@ -625,12 +619,10 @@ block main
         document.getElementById('format-display').textContent = format;
       }
       
-      // ===== AUTO REFRESH BOOKED SEATS =====
       function startAutoRefresh() {
         clearAutoRefresh();
-        // Tự động làm mới danh sách ghế đã đặt mỗi 10 giây
         autoRefreshInterval = setInterval(() => {
-          loadBookedSeats(true); // true = silent refresh (không reset selected seats)
+          loadBookedSeats(true);
         }, 10000);
       }
       
@@ -640,14 +632,12 @@ block main
           autoRefreshInterval = null;
         }
       }
-      // =====================================
       
       async function loadBookedSeats(silent = false) {
         if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
           return;
         }
         
-        // Nếu không phải silent refresh, reset seats đã chọn
         if (!silent) {
           selectedSeats = [];
           document.querySelectorAll('.seat.selected').forEach(seat => {
@@ -667,20 +657,16 @@ block main
             const oldBookedSeats = [...bookedSeats];
             bookedSeats = data.bookedSeats || [];
             
-            // Kiểm tra nếu có ghế mới bị đặt
             const newlyBooked = bookedSeats.filter(seat => !oldBookedSeats.includes(seat));
             
             if (silent && newlyBooked.length > 0) {
-              // Nếu có ghế mới bị đặt, kiểm tra xem user có đang chọn ghế đó không
               const conflictSeats = selectedSeats.filter(seat => bookedSeats.includes(seat));
               
               if (conflictSeats.length > 0) {
-                // Loại bỏ ghế bị conflict khỏi selectedSeats
                 selectedSeats = selectedSeats.filter(seat => !bookedSeats.includes(seat));
                 updateTotalPrice();
                 updateSeatsDisplay();
                 
-                // Thông báo cho user
                 alert(`Ghế ${conflictSeats.join(', ')} vừa được người khác đặt. Vui lòng chọn ghế khác!`);
               }
             }
@@ -696,17 +682,13 @@ block main
         document.querySelectorAll('.seat').forEach(seat => {
           const seatNumber = seat.getAttribute('data-seat');
           
-          // Remove all status classes first
           seat.classList.remove('seat-booked', 'selected');
           
-          // Add appropriate class
           if (bookedSeats.includes(seatNumber)) {
             seat.classList.add('seat-booked');
-            // Thêm cursor not-allowed
             seat.style.cursor = 'not-allowed';
           } else {
             seat.style.cursor = 'pointer';
-            // Khôi phục lại selected nếu ghế đang được chọn
             if (selectedSeats.includes(seatNumber)) {
               seat.classList.add('selected');
             }
@@ -734,10 +716,21 @@ block main
           `${minutes}:${seconds.toString().padStart(2, '0')}`;
       }
       
-      // Seat selection
+      // ===== THÊM KIỂM TRA ĐĂNG NHẬP KHI CHỌN GHẾ =====
       document.querySelectorAll('.seat').forEach(seat => {
         seat.addEventListener('click', function() {
+          // Kiểm tra đăng nhập
+          if (!isLoggedIn) {
+            if (confirm('Bạn cần đăng nhập để đặt vé. Chuyển đến trang đăng nhập?')) {
+              // Lưu URL hiện tại để redirect sau khi đăng nhập
+              sessionStorage.setItem('redirectAfterLogin', window.location.href);
+              window.location.href = '/user/login';
+            }
+            return;
+          }
+          
           if (this.classList.contains('seat-booked')) return;
+          
           if (!timeSelect.value) {
             alert('Vui lòng chọn suất chiếu trước!');
             return;
@@ -758,6 +751,7 @@ block main
           updateSeatsDisplay();
         });
       });
+      // =================================================
       
       function updateTotalPrice() {
         let total = 0;
@@ -779,6 +773,15 @@ block main
       
       // Continue button
       btnContinue.addEventListener('click', function() {
+        // Kiểm tra đăng nhập
+        if (!isLoggedIn) {
+          if (confirm('Bạn cần đăng nhập để tiếp tục đặt vé. Chuyển đến trang đăng nhập?')) {
+            sessionStorage.setItem('redirectAfterLogin', window.location.href);
+            window.location.href = '/user/login';
+          }
+          return;
+        }
+        
         if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
           alert('Vui lòng chọn đầy đủ thông tin rạp, ngày và giờ chiếu!');
           return;
@@ -794,7 +797,6 @@ block main
         const dateValue = dateSelect.value;
         const dateOption = dateSelect.options[dateSelect.selectedIndex];
         
-        // Chuyển đổi date sang ISO string
         let dateISO;
         try {
           const dateObj = new Date(dateValue);
@@ -810,7 +812,6 @@ block main
         const time = timeSelect.value;
         const format = dateOption.getAttribute('data-format');
         
-        // Chuyển seats thành array of objects
         const seatObjects = selectedSeats.map(seatNumber => {
           const seatEl = document.querySelector(`[data-seat="${seatNumber}"]`);
           return {
@@ -820,13 +821,11 @@ block main
           };
         });
         
-        // Tính tiền vé
         let ticketPrice = 0;
         seatObjects.forEach(seat => {
           ticketPrice += seat.price;
         });
         
-        // Lưu vào sessionStorage
         const bookingData = {
           movieId: movieId,
           movieName: '#{movieDetail.name}',
@@ -847,7 +846,6 @@ block main
         console.log('=== Booking data saved ===');
         console.log(bookingData);
         
-        // Chuyển sang trang chọn combo
         window.location.href = `/booking/combo?movieId=${movieId}`;
       });
     });

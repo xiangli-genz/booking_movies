@@ -426,7 +426,17 @@ block main
     // Thay thế toàn bộ script block trong booking-combo.pug
 
     document.addEventListener('DOMContentLoaded', function() {
-      // ===== CHỈ LẤY TỪ sessionStorage =====
+      const isLoggedIn = #{user ? 'true' : 'false'};
+      
+      // ===== KIỂM TRA ĐĂNG NHẬP NGAY KHI VÀO TRANG =====
+      if (!isLoggedIn) {
+        alert('Bạn cần đăng nhập để tiếp tục đặt vé!');
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = '/user/login';
+        return;
+      }
+      // =================================================
+      
       const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || 'null');
       
       if (!bookingData || !bookingData.movieId || !bookingData.seats) {
@@ -434,7 +444,6 @@ block main
         window.location.href = '/';
         return;
       }
-      // ====================================
       
       // Hiển thị thông tin booking
       document.getElementById('cinema-display').textContent = bookingData.cinema || '--';
@@ -444,7 +453,6 @@ block main
       document.getElementById('seats-display').textContent = 
         bookingData.seats.map(s => s.seatNumber).join(', ');
       
-      // Tính tiền vé từ giá đã lưu
       let ticketPrice = bookingData.ticketPrice || 0;
       document.getElementById('ticket-price').textContent = ticketPrice.toLocaleString('vi-VN') + 'đ';
       
@@ -490,12 +498,10 @@ block main
         document.getElementById('total-price').textContent = total.toLocaleString('vi-VN') + 'đ';
       }
       
-      // Khởi tạo giá ban đầu
       updateComboPrice();
       
       // Xử lý nút Tiếp tục
       document.getElementById('btn-continue').addEventListener('click', function() {
-        // Thu thập dữ liệu combo
         const selectedCombos = {};
         
         document.querySelectorAll('[data-combo-input]').forEach(input => {
@@ -510,15 +516,12 @@ block main
           }
         });
         
-        // ===== Cập nhật sessionStorage =====
         bookingData.combos = selectedCombos;
         sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
         
         console.log('=== Updated booking data with combos ===');
         console.log(bookingData);
-        // ====================================
         
-        // Chuyển sang trang checkout
         window.location.href = '/booking/checkout';
       });
     });
