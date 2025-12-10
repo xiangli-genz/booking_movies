@@ -44,10 +44,10 @@ block main
           
           // Seat Grid
           .seat-grid-container
-            - const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
-            - const seatsPerRow = 15
-            - const vipRows = ['H', 'I', 'J', 'K']
-            - const coupleRows = ['L']
+            - const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+            - const seatsPerRow = 10
+            - const vipRows = ['F', 'G', 'H', 'I']
+            - const coupleRows = ['J']
             
             each row in rows
               .seat-row
@@ -534,6 +534,7 @@ block main
       let bookedSeats = [];
       let countdownTimer;
       let timeRemaining = 600; // 10 phút
+      let autoRefreshInterval;
       
       const cinemaSelect = document.getElementById('cinema-select');
       const dateSelect = document.getElementById('date-select');
@@ -553,6 +554,9 @@ block main
         dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>';
         timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
         timeSelect.disabled = true;
+        
+        // Clear auto refresh khi đổi rạp
+        clearAutoRefresh();
         
         if (selectedCinema && showtimesGrouped[selectedCinema]) {
           dateSelect.disabled = false;
@@ -580,6 +584,9 @@ block main
         
         timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
         
+        // Clear auto refresh khi đổi ngày
+        clearAutoRefresh();
+        
         if (selectedCinema && selectedDate && showtimesGrouped[selectedCinema][selectedDate]) {
           timeSelect.disabled = false;
           
@@ -601,6 +608,7 @@ block main
       timeSelect.addEventListener('change', function() {
         updateDisplay();
         loadBookedSeats();
+        startAutoRefresh(); // Bắt đầu tự động làm mới
       });
       
       function updateDisplay() {
@@ -617,19 +625,37 @@ block main
         document.getElementById('format-display').textContent = format;
       }
       
-      async function loadBookedSeats() {
+      // ===== AUTO REFRESH BOOKED SEATS =====
+      function startAutoRefresh() {
+        clearAutoRefresh();
+        // Tự động làm mới danh sách ghế đã đặt mỗi 10 giây
+        autoRefreshInterval = setInterval(() => {
+          loadBookedSeats(true); // true = silent refresh (không reset selected seats)
+        }, 10000);
+      }
+      
+      function clearAutoRefresh() {
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+      }
+      // =====================================
+      
+      async function loadBookedSeats(silent = false) {
         if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
           return;
         }
         
-        // Reset seats
-        selectedSeats = [];
-        bookedSeats = [];
-        document.querySelectorAll('.seat.selected').forEach(seat => {
-          seat.classList.remove('selected');
-        });
-        updateTotalPrice();
-        updateSeatsDisplay();
+        // Nếu không phải silent refresh, reset seats đã chọn
+        if (!silent) {
+          selectedSeats = [];
+          document.querySelectorAll('.seat.selected').forEach(seat => {
+            seat.classList.remove('selected');
+          });
+          updateTotalPrice();
+          updateSeatsDisplay();
+        }
         
         try {
           const response = await fetch(
@@ -638,7 +664,27 @@ block main
           const data = await response.json();
           
           if (data.code === 'success') {
+            const oldBookedSeats = [...bookedSeats];
             bookedSeats = data.bookedSeats || [];
+            
+            // Kiểm tra nếu có ghế mới bị đặt
+            const newlyBooked = bookedSeats.filter(seat => !oldBookedSeats.includes(seat));
+            
+            if (silent && newlyBooked.length > 0) {
+              // Nếu có ghế mới bị đặt, kiểm tra xem user có đang chọn ghế đó không
+              const conflictSeats = selectedSeats.filter(seat => bookedSeats.includes(seat));
+              
+              if (conflictSeats.length > 0) {
+                // Loại bỏ ghế bị conflict khỏi selectedSeats
+                selectedSeats = selectedSeats.filter(seat => !bookedSeats.includes(seat));
+                updateTotalPrice();
+                updateSeatsDisplay();
+                
+                // Thông báo cho user
+                alert(`Ghế ${conflictSeats.join(', ')} vừa được người khác đặt. Vui lòng chọn ghế khác!`);
+              }
+            }
+            
             updateSeatDisplay();
           }
         } catch (error) {
@@ -649,10 +695,21 @@ block main
       function updateSeatDisplay() {
         document.querySelectorAll('.seat').forEach(seat => {
           const seatNumber = seat.getAttribute('data-seat');
+          
+          // Remove all status classes first
+          seat.classList.remove('seat-booked', 'selected');
+          
+          // Add appropriate class
           if (bookedSeats.includes(seatNumber)) {
             seat.classList.add('seat-booked');
+            // Thêm cursor not-allowed
+            seat.style.cursor = 'not-allowed';
           } else {
-            seat.classList.remove('seat-booked');
+            seat.style.cursor = 'pointer';
+            // Khôi phục lại selected nếu ghế đang được chọn
+            if (selectedSeats.includes(seatNumber)) {
+              seat.classList.add('selected');
+            }
           }
         });
       }
