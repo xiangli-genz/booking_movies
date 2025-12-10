@@ -63,14 +63,39 @@ module.exports.detail = async (req, res) => {
       // Format dữ liệu
       movieDetail.releaseDateFormat = moment(movieDetail.releaseDate).format("DD/MM/YYYY");
 
-      // Lấy danh sách rạp
-      const cinemaList = await Cinema.find({ status: "active" });
+      // Lấy danh sách rạp từ showtimes của phim
+      const cinemaNames = [...new Set(movieDetail.showtimes.map(st => st.cinema))];
+      const cinemaList = await Cinema.find({ 
+        name: { $in: cinemaNames },
+        status: "active" 
+      });
 
-      // Format lịch chiếu
-      if(movieDetail.showtimes) {
+      // Format lịch chiếu - Group by cinema and date
+      const showtimesGrouped = {};
+      
+      if(movieDetail.showtimes && movieDetail.showtimes.length > 0) {
         movieDetail.showtimes.forEach(showtime => {
-          showtime.dateFormat = moment(showtime.date).format("DD/MM/YYYY");
-          showtime.dayOfWeek = moment(showtime.date).format("dddd");
+          const cinema = showtime.cinema;
+          const dateStr = moment(showtime.date).format("YYYY-MM-DD");
+          
+          if (!showtimesGrouped[cinema]) {
+            showtimesGrouped[cinema] = {};
+          }
+          
+          if (!showtimesGrouped[cinema][dateStr]) {
+            showtimesGrouped[cinema][dateStr] = {
+              date: showtime.date,
+              dateFormat: moment(showtime.date).format("DD/MM/YYYY"),
+              dayOfWeek: moment(showtime.date).format("dddd"),
+              format: showtime.format,
+              times: []
+            };
+          }
+          
+          // Add times
+          if (showtime.times && Array.isArray(showtime.times)) {
+            showtimesGrouped[cinema][dateStr].times.push(...showtime.times);
+          }
         });
       }
 
@@ -78,51 +103,62 @@ module.exports.detail = async (req, res) => {
         pageTitle: movieDetail.name,
         breadcrumb: breadcrumb,
         movieDetail: movieDetail,
-        cinemaList: cinemaList
+        cinemaList: cinemaList,
+        showtimesGrouped: showtimesGrouped
       });
     } else {
       res.redirect("/");
     }
   } catch (error) {
+    console.error("Error in movie detail:", error);
     res.redirect("/");
   }
 };
 
 module.exports.getBookedSeats = async (req, res) => {
   try {
-    const { movieId, cinema, date } = req.query;
+    const { movieId, cinema, date, time } = req.query;
 
-    const find = {
-      movieId: movieId,
-      cinema: cinema,
-      deleted: false
-    };
-
-    if(date) {
-      const startDate = moment(date).startOf("date").toDate();
-      const endDate = moment(date).endOf("date").toDate();
-      find.createdAt = {
-        $gte: startDate,
-        $lte: endDate
-      };
+    if (!movieId || !cinema || !date || !time) {
+      return res.json({
+        code: "error",
+        message: "Thiếu thông tin cần thiết"
+      });
     }
 
-    const bookings = await Booking.find(find);
+    // Parse date
+    const searchDate = new Date(date);
+    const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
 
-    const bookedSeats = bookings.reduce((acc, booking) => {
-      if(booking.seats && booking.seats.length > 0) {
+    const bookings = await Booking.find({
+      movieId: movieId,
+      cinema: cinema,
+      "showtime.date": {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      "showtime.time": time,
+      status: { $in: ["initial", "confirmed"] },
+      deleted: false
+    });
+
+    const bookedSeats = [];
+    bookings.forEach(booking => {
+      if (booking.seats && booking.seats.length > 0) {
         booking.seats.forEach(seat => {
-          acc.push(seat.seatNumber);
+          bookedSeats.push(seat.seatNumber);
         });
       }
-      return acc;
-    }, []);
+    });
 
     res.json({
       code: "success",
       bookedSeats: bookedSeats
     });
+
   } catch (error) {
+    console.error("Error getting booked seats:", error);
     res.json({
       code: "error",
       message: "Lỗi khi lấy thông tin ghế"

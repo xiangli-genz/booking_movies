@@ -15,19 +15,18 @@ block main
             .info-group
               label Chọn rạp chiếu
               select#cinema-select(name="cinema")
+                option(value="") -- Chọn rạp --
                 each cinema in cinemaList
                   option(value=cinema.name) #{cinema.name}
             
             .info-group
               label Chọn ngày chiếu
-              select#date-select(name="showtimeDate")
-                if movieDetail.showtimes
-                  each showtime in movieDetail.showtimes
-                    option(value=showtime.date data-format=showtime.format) #{showtime.dateFormat} - #{showtime.dayOfWeek}
+              select#date-select(name="showtimeDate" disabled)
+                option(value="") -- Chọn ngày --
             
             .info-group
               label Chọn suất chiếu
-              select#time-select(name="showtimeTime")
+              select#time-select(name="showtimeTime" disabled)
                 option(value="") -- Chọn giờ chiếu --
           
           // Legend
@@ -215,6 +214,11 @@ block main
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 14px;
+    }
+    
+    .info-group select:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
     }
     
     .seat-legend-top {
@@ -536,29 +540,64 @@ block main
       const timeSelect = document.getElementById('time-select');
       const btnContinue = document.getElementById('btn-continue');
       
-      // Showtimes data từ server
-      const showtimesData = !{JSON.stringify(movieDetail.showtimes || [])};
+      // Showtimes data từ server - đã group by cinema và date
+      const showtimesGrouped = !{JSON.stringify(showtimesGrouped || {})};
       
-      // Update time options khi chọn ngày
-      dateSelect.addEventListener('change', function() {
-        const selectedDate = this.value;
-        timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+      console.log('Showtimes grouped:', showtimesGrouped);
+      
+      // Update date options khi chọn rạp
+      cinemaSelect.addEventListener('change', function() {
+        const selectedCinema = this.value;
         
-        const showtime = showtimesData.find(st => st.date === selectedDate);
-        if (showtime && showtime.times) {
-          showtime.times.forEach(time => {
+        // Reset date và time
+        dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>';
+        timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+        timeSelect.disabled = true;
+        
+        if (selectedCinema && showtimesGrouped[selectedCinema]) {
+          dateSelect.disabled = false;
+          
+          // Populate date options
+          Object.keys(showtimesGrouped[selectedCinema]).forEach(dateKey => {
+            const showtime = showtimesGrouped[selectedCinema][dateKey];
             const option = document.createElement('option');
-            option.value = time;
-            option.textContent = time;
-            timeSelect.appendChild(option);
+            option.value = dateKey;
+            option.setAttribute('data-format', showtime.format);
+            option.textContent = `${showtime.dateFormat} - ${showtime.dayOfWeek}`;
+            dateSelect.appendChild(option);
           });
+        } else {
+          dateSelect.disabled = true;
         }
         
         updateDisplay();
       });
       
-      // Update display khi thay đổi selection
-      cinemaSelect.addEventListener('change', updateDisplay);
+      // Update time options khi chọn ngày
+      dateSelect.addEventListener('change', function() {
+        const selectedCinema = cinemaSelect.value;
+        const selectedDate = this.value;
+        
+        timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+        
+        if (selectedCinema && selectedDate && showtimesGrouped[selectedCinema][selectedDate]) {
+          timeSelect.disabled = false;
+          
+          const times = showtimesGrouped[selectedCinema][selectedDate].times;
+          times.forEach(time => {
+            const option = document.createElement('option');
+            option.value = time;
+            option.textContent = time;
+            timeSelect.appendChild(option);
+          });
+        } else {
+          timeSelect.disabled = true;
+        }
+        
+        updateDisplay();
+      });
+      
+      // Update display và load booked seats khi thay đổi time
       timeSelect.addEventListener('change', function() {
         updateDisplay();
         loadBookedSeats();
@@ -566,13 +605,14 @@ block main
       
       function updateDisplay() {
         const cinema = cinemaSelect.value;
+        const dateValue = dateSelect.value;
         const dateOption = dateSelect.options[dateSelect.selectedIndex];
-        const date = dateOption ? dateOption.text : '--';
+        const dateText = dateOption ? dateOption.text : '--';
         const time = timeSelect.value || '--';
         const format = dateOption ? dateOption.getAttribute('data-format') : '--';
         
-        document.getElementById('cinema-display').textContent = cinema;
-        document.getElementById('date-display').textContent = date;
+        document.getElementById('cinema-display').textContent = cinema || '--';
+        document.getElementById('date-display').textContent = dateText;
         document.getElementById('time-display').textContent = time;
         document.getElementById('format-display').textContent = format;
       }
@@ -581,6 +621,15 @@ block main
         if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
           return;
         }
+        
+        // Reset seats
+        selectedSeats = [];
+        bookedSeats = [];
+        document.querySelectorAll('.seat.selected').forEach(seat => {
+          seat.classList.remove('selected');
+        });
+        updateTotalPrice();
+        updateSeatsDisplay();
         
         try {
           const response = await fetch(
@@ -672,7 +721,6 @@ block main
       }
       
       // Continue button
-      // Continue button
       btnContinue.addEventListener('click', function() {
         if (!cinemaSelect.value || !dateSelect.value || !timeSelect.value) {
           alert('Vui lòng chọn đầy đủ thông tin rạp, ngày và giờ chiếu!');
@@ -686,12 +734,11 @@ block main
         
         const movieId = this.getAttribute('data-movie-id');
         const cinema = cinemaSelect.value;
+        const dateValue = dateSelect.value;
         const dateOption = dateSelect.options[dateSelect.selectedIndex];
         
         // Chuyển đổi date sang ISO string
-        let dateValue = dateSelect.value;
         let dateISO;
-        
         try {
           const dateObj = new Date(dateValue);
           if (isNaN(dateObj.getTime())) {
@@ -706,7 +753,7 @@ block main
         const time = timeSelect.value;
         const format = dateOption.getAttribute('data-format');
         
-        // ===== FIX: Chuyển seats thành array of objects ngay từ đầu =====
+        // Chuyển seats thành array of objects
         const seatObjects = selectedSeats.map(seatNumber => {
           const seatEl = document.querySelector(`[data-seat="${seatNumber}"]`);
           return {
@@ -721,12 +768,11 @@ block main
         seatObjects.forEach(seat => {
           ticketPrice += seat.price;
         });
-        // ================================================================
         
-        // ===== BỎ LOGIC GIỎ HÀNG - Chỉ lưu vào sessionStorage =====
+        // Lưu vào sessionStorage
         const bookingData = {
           movieId: movieId,
-          movieName: '#{movieDetail.name}', // Lấy từ server
+          movieName: '#{movieDetail.name}',
           movieAvatar: '#{movieDetail.avatar}',
           ageRating: '#{movieDetail.ageRating || "P"}',
           language: '#{movieDetail.language || "Phụ đề"}',
@@ -734,17 +780,15 @@ block main
           showtimeDate: dateISO,
           showtimeTime: time,
           showtimeFormat: format,
-          seats: seatObjects, // Array of objects
+          seats: seatObjects,
           combos: {},
           ticketPrice: ticketPrice
         };
         
-        // Lưu vào sessionStorage (CHỈ tồn tại trong phiên hiện tại)
         sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
         
-        console.log('=== Booking data saved to sessionStorage ===');
+        console.log('=== Booking data saved ===');
         console.log(bookingData);
-        // ===========================================================
         
         // Chuyển sang trang chọn combo
         window.location.href = `/booking/combo?movieId=${movieId}`;
